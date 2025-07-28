@@ -1,233 +1,281 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  TextInput,
   ScrollView,
   StatusBar,
   Alert,
 } from 'react-native';
 import { colors } from '../constants/colors';
-import CheckBox from '@react-native-community/checkbox'; // Fixed import
-import DateTimePicker from '@react-native-community/datetimepicker'; // Fixed import
+import { ui } from '../constants/ui';
+import { Button, Header, TextInput } from '../components';
+import { Picker } from '@react-native-picker/picker';
 
-// You might want to define these in a separate data file if they grow
-const mealTypes = [
-  { label: 'Breakfast', value: 'breakfast' },
-  { label: 'Lunch', value: 'lunch' },
-  { label: 'Dinner', value: 'dinner' },
-  { label: 'Snack', value: 'snack' },
-];
+const NewMealEntryScreen = ({ navigation, route }) => {
+  // Check if there's prefill data from route params
+  const prefillData = route.params?.prefillData || null;
+  
+  // State to manage a dynamic list of food entries
+  const [foodEntries, setFoodEntries] = useState([
+    { name: 'Grilled chicken', quantity: '250', unit: 'grams' },
+  ]);
 
-const NewMealEntryScreen = ({ navigation }) => {
-  const [mealName, setMealName] = useState('');
-  const [calories, setCalories] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carbs, setCarbs] = useState('');
-  const [fats, setFats] = useState('');
-  const [mealType, setMealType] = useState('breakfast'); // Default to breakfast
-  const [date, setDate] = useState(new Date());
-  const [time, setTime] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isQuickLog, setIsQuickLog] = useState(false);
+  // Simplified time state to match the new UI
+  const [time, setTime] = useState({ hour: '07', minute: '00' });
+  const [mealName, setMealName] = useState('Lunch');
 
-  const onDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShowDatePicker(false);
-    setDate(currentDate);
+  // Handle prefill data when component mounts
+  useEffect(() => {
+    if (prefillData && prefillData.foods) {
+      setFoodEntries(prefillData.foods);
+    }
+  }, [prefillData]);
+
+  // Current time initialization
+  useEffect(() => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    setTime({ hour: hours, minute: minutes });
+
+    // Auto-detect meal type based on current time
+    const hour = now.getHours();
+    if (hour >= 5 && hour < 11) {
+      setMealName('Breakfast');
+    } else if (hour >= 11 && hour < 16) {
+      setMealName('Lunch');
+    } else if (hour >= 16 && hour < 21) {
+      setMealName('Dinner');
+    } else {
+      setMealName('Snack');
+    }
+  }, []);
+
+  // --- Time Management ---
+  const incrementTime = () => {
+    const currentHour = parseInt(time.hour);
+    const newHour = (currentHour + 1) % 24;
+    setTime({ ...time, hour: newHour.toString().padStart(2, '0') });
   };
 
-  const onTimeChange = (event, selectedTime) => {
-    const currentTime = selectedTime || time;
-    setShowTimePicker(false);
-    setTime(currentTime);
+  const decrementTime = () => {
+    const currentHour = parseInt(time.hour);
+    const newHour = currentHour === 0 ? 23 : currentHour - 1;
+    setTime({ ...time, hour: newHour.toString().padStart(2, '0') });
   };
 
+  // --- Handlers for Dynamic List ---
+
+  // Updates a specific field (name, quantity, unit) of a food item
+  const handleUpdateEntry = (index, field, value) => {
+    const newEntries = [...foodEntries];
+    newEntries[index][field] = value;
+    setFoodEntries(newEntries);
+  };
+
+  // Adds a new, empty food item to the list
+  const handleAddEntry = () => {
+    setFoodEntries([...foodEntries, { name: '', quantity: '', unit: 'grams' }]);
+  };
+
+  // Removes a food item from the list
+  const handleRemoveEntry = (index) => {
+    if (foodEntries.length > 1) {
+      const newEntries = foodEntries.filter((_, i) => i !== index);
+      setFoodEntries(newEntries);
+    }
+  };
+
+  // Handle icon selection to prefill food name
+  const handleIconSelect = (foodName) => {
+    const iconFoods = {
+      '☕': 'Coffee',
+      '🍴': 'Meal',
+      '🍎': 'Apple',
+      '🥕': 'Carrot'
+    };
+    
+    const newEntry = { name: iconFoods[foodName] || 'New Item', quantity: '1', unit: 'serving' };
+    setFoodEntries([...foodEntries, newEntry]);
+  };
+
+  // --- Main Log Handler ---
   const handleLogMeal = () => {
-    if (!mealName || !calories) {
-      Alert.alert('Missing Information', 'Please enter meal name and calories.');
+    // Basic validation
+    const isInvalid = foodEntries.some(
+      (entry) => !entry.name.trim() || !entry.quantity.trim()
+    );
+    if (isInvalid) {
+      Alert.alert(
+        'Missing Information',
+        'Please make sure every food item has a name and quantity.'
+      );
       return;
     }
 
-    const newMeal = {
-      name: mealName,
-      calories: parseFloat(calories),
-      protein: parseFloat(protein || 0),
-      carbs: parseFloat(carbs || 0),
-      fats: parseFloat(fats || 0),
-      type: mealType,
-      date: date.toISOString().split('T')[0], // YYYY-MM-DD
-      time: time.toTimeString().split(' ')[0].substring(0, 5), // HH:MM
-      isFavorite,
-      isQuickLog,
+    const newMealLog = {
+      id: Date.now().toString(), // Simple ID generation
+      mealType: mealName,
+      time: `${time.hour}:${time.minute}`,
+      foods: foodEntries.filter(entry => entry.name.trim()), // Remove empty entries
+      dateLogged: new Date().toISOString(),
     };
 
-    Alert.alert('Meal Logged!', `Successfully logged: ${newMeal.name} - ${newMeal.calories} kcal`);
-    console.log('Logged Meal:', newMeal);
-    // In a real app, you would save this to state, a database, or send to an API.
-    // For now, we'll just go back.
-    navigation.goBack();
+    Alert.alert('Meal Logged!', `Successfully logged ${mealName}.`, [
+      {
+        text: 'OK',
+        onPress: () => {
+          // Navigate back to MealTracker with the new meal data
+          navigation.navigate('MealTracker', { newMeal: newMealLog });
+        }
+      }
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>{'<'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Meal Entry</Text>
-        <View style={{ width: 40 }} /> {/* Placeholder for alignment */}
-      </View>
+      <Header title="New Meal Entry" onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Meal Name */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Meal Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Grilled Chicken Salad"
-            value={mealName}
-            onChangeText={setMealName}
-          />
+        {/* --- Enhanced Time Picker Display --- */}
+        <View style={styles.timePicker}>
+          <TouchableOpacity onPress={incrementTime}>
+            <Text style={styles.timeScroller}>
+              {(parseInt(time.hour) + 1).toString().padStart(2, '0')}
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.timeDisplay}>
+            <Text style={styles.timeText}>{time.hour}</Text>
+            <Text style={styles.timeText}>:</Text>
+            <Text style={styles.timeText}>{time.minute}</Text>
+          </View>
+          <TouchableOpacity onPress={decrementTime}>
+            <Text style={styles.timeScroller}>
+              {(parseInt(time.hour) - 1 < 0 ? 23 : parseInt(time.hour) - 1).toString().padStart(2, '0')}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Nutritional Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nutritional Information</Text>
-          <View style={styles.row}>
-            <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Calories (kcal)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                keyboardType="numeric"
-                value={calories}
-                onChangeText={setCalories}
-              />
-            </View>
-            <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Protein (g)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                keyboardType="numeric"
-                value={protein}
-                onChangeText={setProtein}
-              />
-            </View>
-          </View>
-          <View style={styles.row}>
-            <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Carbs (g)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                keyboardType="numeric"
-                value={carbs}
-                onChangeText={setCarbs}
-              />
-            </View>
-            <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Fats (g)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                keyboardType="numeric"
-                value={fats}
-                onChangeText={setFats}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Meal Type */}
-        <View style={styles.section}>
+        {/* --- Meal Type Selector --- */}
+        <View style={styles.mealTypeContainer}>
           <Text style={styles.sectionTitle}>Meal Type</Text>
-          <View style={styles.mealTypeButtonsContainer}>
-            {mealTypes.map((type) => (
+          <View style={styles.mealTypeButtons}>
+            {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((type) => (
               <TouchableOpacity
-                key={type.value}
+                key={type}
                 style={[
                   styles.mealTypeButton,
-                  mealType === type.value && styles.mealTypeButtonSelected,
+                  mealName === type && styles.mealTypeButtonActive
                 ]}
-                onPress={() => setMealType(type.value)}
+                onPress={() => setMealName(type)}
               >
-                <Text
-                  style={[
-                    styles.mealTypeButtonText,
-                    mealType === type.value && styles.mealTypeButtonTextSelected,
-                  ]}
-                >
-                  {type.label}
+                <Text style={[
+                  styles.mealTypeButtonText,
+                  mealName === type && styles.mealTypeButtonTextActive
+                ]}>
+                  {type}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Date and Time */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Date & Time</Text>
-          <View style={styles.row}>
-            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateTimeButton}>
-              <Text style={styles.dateTimeText}>{date.toLocaleDateString()}</Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
+        <Text style={styles.mealNameTitle}>{mealName}</Text>
+
+        {/* --- Dynamic Food Entries List --- */}
+        {foodEntries.map((item, index) => (
+          <View key={index} style={styles.foodEntryContainer}>
+            <View style={styles.foodEntryHeader}>
+              <TextInput
+                placeholder="e.g., Avocado Toast"
+                value={item.name}
+                onChangeText={(text) => handleUpdateEntry(index, 'name', text)}
+                style={styles.foodNameInput}
               />
-            )}
-
-            <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.dateTimeButton}>
-              <Text style={styles.dateTimeText}>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-            </TouchableOpacity>
-            {showTimePicker && (
-              <DateTimePicker
-                value={time}
-                mode="time"
-                display="spinner" // Use spinner for time wheel
-                onChange={onTimeChange}
-              />
-            )}
+              {foodEntries.length > 1 && (
+                <TouchableOpacity 
+                  style={styles.removeButton}
+                  onPress={() => handleRemoveEntry(index)}
+                >
+                  <Text style={styles.removeButtonText}>×</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.quantityRow}>
+              <View style={styles.halfInput}>
+                <TextInput
+                  placeholder="Quantity"
+                  keyboardType="numeric"
+                  value={item.quantity}
+                  onChangeText={(text) => handleUpdateEntry(index, 'quantity', text)}
+                />
+              </View>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={item.unit}
+                  onValueChange={(itemValue) => handleUpdateEntry(index, 'unit', itemValue)}
+                  style={styles.picker}
+                  itemStyle={styles.pickerItem}
+                >
+                  <Picker.Item label="grams" value="grams" />
+                  <Picker.Item label="oz" value="oz" />
+                  <Picker.Item label="servings" value="servings" />
+                  <Picker.Item label="pcs" value="pcs" />
+                  <Picker.Item label="cups" value="cups" />
+                  <Picker.Item label="tbsp" value="tbsp" />
+                  <Picker.Item label="tsp" value="tsp" />
+                </Picker>
+              </View>
+            </View>
           </View>
-        </View>
+        ))}
 
-        {/* Options (Checkboxes) */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Options</Text>
-          <View style={styles.checkboxContainer}>
-            <CheckBox
-              value={isFavorite}
-              onValueChange={setIsFavorite}
-              tintColors={{ true: colors.primary, false: colors.textSecondary }}
-            />
-            <Text style={styles.checkboxLabel}>Mark as Favorite</Text>
-          </View>
-          <View style={styles.checkboxContainer}>
-            <CheckBox
-              value={isQuickLog}
-              onValueChange={setIsQuickLog}
-              tintColors={{ true: colors.primary, false: colors.textSecondary }}
-            />
-            <Text style={styles.checkboxLabel}>Quick Log (No details needed)</Text>
-          </View>
-        </View>
-
-        {/* Log Meal Button */}
-        <TouchableOpacity style={styles.logMealButton} onPress={handleLogMeal}>
-          <Text style={styles.logMealButtonText}>Log Meal</Text>
+        <TouchableOpacity style={styles.addItemButton} onPress={handleAddEntry}>
+          <Text style={styles.addItemButtonText}>+ Add another item</Text>
         </TouchableOpacity>
+
+        {/* --- Icon Shortcuts --- */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Add</Text>
+          <View style={styles.iconRow}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => handleIconSelect('☕')}
+            >
+              <Text style={styles.iconEmoji}>☕</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => handleIconSelect('🍴')}
+            >
+              <Text style={styles.iconEmoji}>🍴</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => handleIconSelect('🍎')}
+            >
+              <Text style={styles.iconEmoji}>🍎</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => handleIconSelect('🥕')}
+            >
+              <Text style={styles.iconEmoji}>🥕</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* --- Log Meal Button --- */}
+        <Button
+          title="Log Meal"
+          onPress={handleLogMeal}
+          style={styles.logMealButton}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -238,46 +286,132 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.grayDark,
-  },
-  backButton: {
-    padding: 10,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: colors.text,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 30, // Extra padding for scroll
+    padding: ui.padding,
+    paddingBottom: 30,
   },
-  inputGroup: {
+  timePicker: {
+    alignItems: 'center',
     marginBottom: 20,
   },
-  inputLabel: {
+  timeScroller: {
+    fontSize: 20,
+    color: colors.textSecondary || '#9CA3AF',
+    marginVertical: 4,
+    padding: 8,
+  },
+  timeDisplay: {
+    backgroundColor: colors.primary || '#F59E0B',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '60%',
+  },
+  timeText: {
+    color: colors.white,
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginHorizontal: 5,
+  },
+  mealTypeContainer: {
+    marginBottom: 20,
+  },
+  mealTypeButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  mealTypeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: ui.borderRadius || 8,
+    borderWidth: 1,
+    borderColor: colors.grayDark || '#D1D5DB',
+    backgroundColor: colors.white,
+    alignItems: 'center',
+  },
+  mealTypeButtonActive: {
+    backgroundColor: colors.primary || '#F59E0B',
+    borderColor: colors.primary || '#F59E0B',
+  },
+  mealTypeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text || '#2D2D2D',
+  },
+  mealTypeButtonTextActive: {
+    color: colors.white,
+  },
+  mealNameTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: colors.text || '#2D2D2D',
+    marginBottom: 16,
+  },
+  foodEntryContainer: {
+    marginBottom: 16,
+  },
+  foodEntryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  foodNameInput: {
+    flex: 1,
+  },
+  removeButton: {
+    marginLeft: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeButtonText: {
+    color: colors.white,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  quantityRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  halfInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  pickerContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.grayDark || '#D1D5DB',
+    borderRadius: ui.borderRadius || 8,
+    justifyContent: 'center',
+    backgroundColor: colors.gray || '#F3F4F6',
+  },
+  picker: {
+    width: '100%',
+    height: 50,
+  },
+  pickerItem: {
+    height: 50,
+  },
+  addItemButton: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.primary || '#F59E0B',
+    borderStyle: 'dashed',
+    borderRadius: ui.borderRadius || 8,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  addItemButtonText: {
+    color: colors.primary || '#F59E0B',
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: colors.gray,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: colors.text,
   },
   section: {
     marginBottom: 25,
@@ -288,84 +422,24 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 12,
   },
-  row: {
+  iconRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
   },
-  halfInput: {
+  iconButton: {
+    backgroundColor: colors.primary || '#F59E0B',
     flex: 1,
-    marginRight: 10,
-  },
-  pickerContainer: {
-    backgroundColor: colors.gray,
-    borderRadius: 8,
-    overflow: 'hidden', // Ensures the picker respects border radius
-  },
-  picker: {
-    height: 50,
-    width: '100%',
-    color: colors.text,
-  },
-  dateTimeButton: {
-    flex: 1,
-    backgroundColor: colors.gray,
-    borderRadius: 8,
-    padding: 12,
+    marginHorizontal: 5,
+    height: 60,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
   },
-  dateTimeText: {
-    fontSize: 16,
-    color: colors.text,
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  checkboxLabel: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: colors.text,
+  iconEmoji: {
+    fontSize: 28,
   },
   logMealButton: {
-    backgroundColor: colors.primary,
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  logMealButtonText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  mealTypeButtonsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap', // Allow buttons to wrap to next line
-    justifyContent: 'flex-start', // Align to start
-  },
-  mealTypeButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.grayDark,
-    marginRight: 10,
-    marginBottom: 10, // For wrapping
-  },
-  mealTypeButtonSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  mealTypeButtonText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  mealTypeButtonTextSelected: {
-    color: colors.white,
+    marginTop: 10,
   },
 });
 

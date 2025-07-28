@@ -1,43 +1,138 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, StatusBar, Alert, ImageBackground } from 'react-native'; // Import ImageBackground
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, StatusBar, Alert, ImageBackground } from 'react-native';
 import { colors } from '../constants/colors';
-import { mealCategories, bottomNavItems, popularMeals } from '../constants/data'; // Import popularMeals
+import { ui } from '../constants/ui';
+import { mealCategories, bottomNavItems, popularMeals } from '../constants/data';
+import { Button, Card, Header, TextInput, BottomNavigation } from '../components';
 
-const MealTrackerScreen = ({ navigation }) => {
+const MealTrackerScreen = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [mealsLogged, setMealsLogged] = useState(5);
-  const progressPercentage = Math.min(100, Math.round((mealsLogged / 6) * 100));
+  const [loggedMeals, setLoggedMeals] = useState([]);
+  const [totalMealsLogged, setTotalMealsLogged] = useState(0);
+  
+  // Daily goal (can be made configurable)
+  const dailyMealGoal = 6;
+  const progressPercentage = Math.min(100, Math.round((totalMealsLogged / dailyMealGoal) * 100));
+
+  // Handle new meal data from NewMealEntryScreen
+  useEffect(() => {
+    if (route.params?.newMeal) {
+      const newMeal = route.params.newMeal;
+      setLoggedMeals(prevMeals => [...prevMeals, newMeal]);
+      setTotalMealsLogged(prev => prev + 1);
+      
+      // Clear the parameter to prevent re-adding on subsequent renders
+      navigation.setParams({ newMeal: null });
+    }
+  }, [route.params?.newMeal]);
+
+  // Function to get today's meals grouped by meal type
+  const getTodaysMeals = () => {
+    const mealsByType = {};
+    loggedMeals.forEach(meal => {
+      if (!mealsByType[meal.mealType]) {
+        mealsByType[meal.mealType] = [];
+      }
+      mealsByType[meal.mealType].push(meal);
+    });
+    return mealsByType;
+  };
+
+  const todaysMeals = getTodaysMeals();
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
 
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.profileIcon}><Text>👤</Text></TouchableOpacity>
-        <View><Text style={styles.greeting}>Hello,</Text><Text style={styles.username}>Calorie Tracker User</Text></View>
-        <TouchableOpacity onPress={() => Alert.alert('Notifications!')}><Text style={styles.notificationText}>🔔</Text></TouchableOpacity>
+      <Header 
+        title="Meal Tracker" 
+        rightComponent={
+          <TouchableOpacity onPress={() => Alert.alert('Notifications!')}>
+            <Text style={styles.notificationText}>🔔</Text>
+          </TouchableOpacity>
+        }
+      />
+      
+      <View style={styles.userGreeting}>
+        <View style={styles.profileIcon}><Text>👤</Text></View>
+        <View>
+          <Text style={styles.greeting}>Hello,</Text>
+          <Text style={styles.username}>Calorie Tracker User</Text>
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.progressCard} onPress={() => navigation.navigate('NewMealEntry')}>
-  <Text style={styles.progressText}>You've logged {mealsLogged} meals today!</Text>
-  <Text style={styles.progressSubtext}>{progressPercentage}% of your daily goal met.</Text>
-  <View style={styles.progressBar}><View style={[styles.progressFill, { width: `${progressPercentage}%` }]} /></View>
-  <Text style={styles.tapToLog}>Tap to log another meal</Text>
-</TouchableOpacity>
-
+      <TouchableOpacity onPress={() => navigation.navigate('NewMealEntry')}>
+        <Card style={styles.progressCard}>
+          <Text style={styles.progressText}>You've logged {totalMealsLogged} meals today!</Text>
+          <Text style={styles.progressSubtext}>{progressPercentage}% of your daily goal met.</Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+          </View>
+          <Text style={styles.tapToLog}>Tap to log another meal</Text>
+        </Card>
+      </TouchableOpacity>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
         <View style={styles.searchContainer}>
-          <TextInput placeholder="Search meals..." style={styles.searchInput} value={searchQuery} onChangeText={setSearchQuery} />
-          <TouchableOpacity style={styles.filterButton}><Text style={styles.filterIcon}>≡</Text></TouchableOpacity>
+          <TextInput
+            label=""
+            placeholder="Search meals..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.searchInput}
+          />
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterIcon}>≡</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Today's Logged Meals Section */}
+        {Object.keys(todaysMeals).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Today's Meals</Text>
+            {Object.entries(todaysMeals).map(([mealType, meals]) => (
+              <View key={mealType} style={styles.mealTypeContainer}>
+                <Text style={styles.mealTypeTitle}>{mealType}</Text>
+                {meals.map((meal, index) => (
+                  <Card key={`${mealType}-${index}`} style={styles.loggedMealCard}>
+                    <View style={styles.mealHeader}>
+                      <Text style={styles.mealTime}>{meal.time}</Text>
+                      <TouchableOpacity onPress={() => Alert.alert('Edit Meal', `Edit ${meal.mealType}`)}>
+                        <Text style={styles.editIcon}>✏️</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.foodItemsList}>
+                      {meal.foods.map((food, foodIndex) => (
+                        <View key={foodIndex} style={styles.foodItem}>
+                          <Text style={styles.foodName}>{food.name}</Text>
+                          <Text style={styles.foodQuantity}>{food.quantity} {food.unit}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </Card>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Most Popular meals Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Most Popular meals</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.popularMealsContainer}>
             {popularMeals.map((meal) => (
-              <TouchableOpacity key={meal.id} style={styles.popularMealCard} onPress={() => Alert.alert(`Selected: ${meal.name}`)}>
+              <TouchableOpacity 
+                key={meal.id} 
+                style={styles.popularMealCard} 
+                onPress={() => {
+                  // Navigate to NewMealEntry with pre-filled data
+                  navigation.navigate('NewMealEntry', { 
+                    prefillData: {
+                      foods: [{ name: meal.name, quantity: '1', unit: 'serving' }]
+                    }
+                  });
+                }}
+              >
                 <ImageBackground source={{ uri: meal.image }} style={styles.popularMealImage} imageStyle={styles.popularMealImageStyle}>
                   {meal.isPremium && (
                     <View style={styles.premiumTag}>
@@ -70,61 +165,147 @@ const MealTrackerScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        {bottomNavItems.map((item) => (
-          <TouchableOpacity key={item.name} style={styles.navItem} onPress={() => item.name === 'Home' ? navigation.goBack() : Alert.alert(`Navigating to ${item.name}`)}>
-            <Text style={styles.navIcon}>{item.icon}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <BottomNavigation
+        items={bottomNavItems.map(item => ({
+          ...item,
+          onPress: () => item.name === 'Home' ? navigation.navigate('MealTracker') : Alert.alert(`Navigating to ${item.name}`)
+        }))}
+        activeItem="Meals"
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.white },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, padding: 16 },
-    profileIcon: { width: 40, height: 40, backgroundColor: colors.gray, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-    greeting: { color: colors.textSecondary },
-    username: { fontWeight: 'bold', color: colors.text },
-    notificationText: { fontSize: 24 },
-    progressCard: { marginHorizontal: 16, backgroundColor: colors.gray, borderRadius: 12, padding: 16, marginBottom: 16 },
-    progressText: { fontWeight: '600', color: colors.text },
-    progressSubtext: { color: colors.textSecondary, fontSize: 12, marginVertical: 4 },
-    progressBar: { height: 4, backgroundColor: colors.grayDark, borderRadius: 2, marginTop: 8 },
-    progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },
-    tapToLog: { fontSize: 12, color: colors.primaryDark, fontStyle: 'italic', marginTop: 8 },
-    scrollContainer: { paddingHorizontal: 16 },
-    searchContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-    searchInput: { flex: 1, backgroundColor: colors.gray, borderRadius: 8, padding: 12, marginRight: 12 },
-    filterButton: { backgroundColor: colors.primary, padding: 12, borderRadius: 8 },
-    filterIcon: { color: colors.white, fontSize: 16, fontWeight: 'bold' },
-    section: { marginBottom: 24 },
-    sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 12 },
-    categoriesGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-    categoryItem: { alignItems: 'center', flex: 1 },
-    categoryIcon: { width: 60, height: 60, backgroundColor: colors.gray, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-    categoryIconText: { fontSize: 24 },
-    categoryText: { color: colors.textSecondary, fontSize: 12 },
-    bottomNav: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.grayDark },
-    navItem: { alignItems: 'center' },
-    navIcon: { fontSize: 24 },
-
-    // New styles for "Most Popular meals" section
+    container: { 
+      flex: 1, 
+      backgroundColor: colors.white 
+    },
+    userGreeting: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      paddingHorizontal: ui.padding,
+      marginBottom: ui.padding 
+    },
+    profileIcon: { 
+      width: 40, 
+      height: 40, 
+      backgroundColor: colors.gray, 
+      borderRadius: 20, 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      marginRight: 12 
+    },
+    greeting: { 
+      color: colors.textSecondary 
+    },
+    username: { 
+      fontWeight: 'bold', 
+      color: colors.text 
+    },
+    notificationText: { 
+      fontSize: 24 
+    },
+    progressCard: { 
+      marginHorizontal: ui.padding, 
+      backgroundColor: colors.gray, 
+      marginBottom: ui.padding 
+    },
+    progressText: { 
+      fontWeight: '600', 
+      color: colors.text 
+    },
+    progressSubtext: { 
+      color: colors.textSecondary, 
+      fontSize: 12, 
+      marginVertical: 4 
+    },
+    progressBar: { 
+      height: 4, 
+      backgroundColor: colors.grayDark, 
+      borderRadius: 2, 
+      marginTop: 8 
+    },
+    progressFill: { 
+      height: '100%', 
+      backgroundColor: colors.primary, 
+      borderRadius: 2 
+    },
+    tapToLog: { 
+      fontSize: 12, 
+      color: colors.primaryDark, 
+      fontStyle: 'italic', 
+      marginTop: 8 
+    },
+    scrollContainer: { 
+      paddingHorizontal: ui.padding 
+    },
+    searchContainer: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      marginBottom: 24 
+    },
+    searchInput: { 
+      flex: 1, 
+      marginRight: 12 
+    },
+    filterButton: { 
+      backgroundColor: colors.primary, 
+      padding: 12, 
+      borderRadius: ui.borderRadius 
+    },
+    filterIcon: { 
+      color: colors.white, 
+      fontSize: 16, 
+      fontWeight: 'bold' 
+    },
+    section: { 
+      marginBottom: 24 
+    },
+    sectionTitle: { 
+      fontSize: 18, 
+      fontWeight: '600', 
+      marginBottom: 12 
+    },
+    categoriesGrid: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between' 
+    },
+    categoryItem: { 
+      alignItems: 'center', 
+      flex: 1 
+    },
+    categoryIcon: { 
+      width: 60, 
+      height: 60, 
+      backgroundColor: colors.gray, 
+      borderRadius: 30, 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      marginBottom: 8 
+    },
+    categoryIconText: { 
+      fontSize: 24 
+    },
+    categoryText: { 
+      color: colors.textSecondary, 
+      fontSize: 12 
+    },
+    // Styles for "Most Popular meals" section
     popularMealsContainer: {
-        paddingBottom: 10, // Add some padding at the bottom for shadow
+        paddingBottom: 10,
     },
     popularMealCard: {
-        width: 250, // Fixed width for the card
+        width: 250,
         marginRight: 15,
-        borderRadius: 12,
+        borderRadius: ui.borderRadius,
         backgroundColor: colors.white,
-        shadowColor: '#000', // For iOS shadow
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3, // For Android shadow
-        overflow: 'hidden', // Ensures content respects border radius
+        elevation: 3,
+        overflow: 'hidden',
     },
     popularMealImage: {
         width: '100%',
@@ -133,7 +314,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     popularMealImageStyle: {
-        borderRadius: 12, // Apply border radius to the image itself
+        borderRadius: ui.borderRadius,
     },
     premiumTag: {
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -162,10 +343,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     popularMealDetails: {
-        padding: 12,
-        backgroundColor: colors.gray, // Light gray background for details
-        borderBottomLeftRadius: 12,
-        borderBottomRightRadius: 12,
+        padding: ui.padding,
+        backgroundColor: colors.gray,
+        borderBottomLeftRadius: ui.borderRadius,
+        borderBottomRightRadius: ui.borderRadius,
     },
     popularMealName: {
         fontSize: 16,
@@ -176,6 +357,57 @@ const styles = StyleSheet.create({
     popularMealChef: {
         fontSize: 12,
         color: colors.textSecondary,
+    },
+    // New styles for logged meals
+    mealTypeContainer: {
+        marginBottom: 16,
+    },
+    mealTypeTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.text,
+        marginBottom: 8,
+    },
+    loggedMealCard: {
+        marginBottom: 12,
+        backgroundColor: colors.white,
+        padding: 16,
+        borderRadius: ui.borderRadius,
+        borderLeftWidth: 4,
+        borderLeftColor: colors.primary,
+    },
+    mealHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    mealTime: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.primary,
+    },
+    editIcon: {
+        fontSize: 16,
+    },
+    foodItemsList: {
+        gap: 4,
+    },
+    foodItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 2,
+    },
+    foodName: {
+        fontSize: 14,
+        color: colors.text,
+        flex: 1,
+    },
+    foodQuantity: {
+        fontSize: 12,
+        color: colors.textSecondary,
+        fontWeight: '500',
     },
 });
 
