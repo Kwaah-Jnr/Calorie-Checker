@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, StatusBar, Alert, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, StatusBar, Alert, ImageBackground, Image } from 'react-native';
 import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
 import { mealCategories, bottomNavItems, popularMeals } from '../constants/data';
@@ -133,7 +133,12 @@ const MealTrackerScreen = ({ navigation, route }) => {
                   });
                 }}
               >
-                <ImageBackground source={{ uri: meal.image }} style={styles.popularMealImage} imageStyle={styles.popularMealImageStyle}>
+                <ImageBackground 
+                    source={meal.image} 
+                    style={styles.popularMealImage} 
+                    imageStyle={styles.popularMealImageStyle}
+                    resizeMode="cover"
+                    onError={(error) => console.log('Image loading error:', error)}>
                   {meal.isPremium && (
                     <View style={styles.premiumTag}>
                       <Text style={styles.premiumText}>Premium</Text>
@@ -168,9 +173,15 @@ const MealTrackerScreen = ({ navigation, route }) => {
       <BottomNavigation
         items={bottomNavItems.map(item => ({
           ...item,
-          onPress: () => item.name === 'Home' ? navigation.navigate('MealTracker') : Alert.alert(`Navigating to ${item.name}`)
+          onPress: () => {
+            if (item.routeName === 'NewMealEntry') {
+              navigation.navigate(item.routeName, { onMealLogged: handleMealLogged });
+            } else {
+              navigation.navigate(item.routeName);
+            }
+          }
         }))}
-        activeItem="Meals"
+        activeItem="Dashboard" // Set the active item to 'Dashboard'
       />
     </SafeAreaView>
   );

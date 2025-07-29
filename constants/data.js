@@ -6,35 +6,42 @@ export const mealCategories = [
 ];
 
 export const bottomNavItems = [
-  { icon: '🏠', name: 'Home' },
-  { icon: '🔍', name: 'Search' },
-  { icon: '❤️', name: 'Favorites' },
-  { icon: '👤', name: 'Profile' }
+  { id: '1', name: 'Dashboard', icon: 'home', routeName: 'MealTracker', type: 'Ionicons' },
+  { id: '2', name: 'Log', icon: 'clipboard-outline', routeName: 'LogScreen', type: 'Ionicons' },
+  { id: '3', name: '+', icon: 'add-circle-outline', routeName: 'NewMealEntry', isCentral: true, type: 'Ionicons' }, // Changed to a plus icon from Ionicons
+  { id: '4', name: 'Goals', icon: 'trophy-outline', routeName: 'GoalsScreen', type: 'Ionicons' },
+  { id: '5', name: 'User', icon: 'person', routeName: 'UserProfile', type: 'Ionicons' },
 ];
+
+const images = {
+  avocadoToast: require('../assets/images/Avocado Toast.jpg'),
+  berrySmoothie: require('../assets/images/Berry Smoothie.jpg'),
+  quinoaSalad: require('../assets/images/Quinoa Salad.jpg'),
+};
 
 export const popularMeals = [
   {
-    id: '1',
-    name: 'Avocado Toast',
-    chef: 'Chef Alex',
-    image: 'https://via.placeholder.com/300x200/F0F0F0/000000?text=Avocado+Toast', // Replace with your actual image URL
-    rating: 4,
+    id: 1,
+    name: "Avocado Toast",
+    chef: "Chef Sarah",
+    rating: 4.8,
+    image: images.avocadoToast, // Use the imported image
     isPremium: true,
   },
   {
-    id: '2',
-    name: 'Berry Smoothie',
-    chef: 'Chef Sarah',
-    image: 'https://via.placeholder.com/300x200/F0F0F0/000000?text=Berry+Smoothie', // Replace with your actual image URL
-    rating: 4.5,
-    isPremium: false,
+    id: 2,
+    name: "Berry Smoothie",
+    chef: "Chef Mike",
+    rating: 4.6,
+    image: images.berrySmoothie,
+    isPremium: true,
   },
   {
-    id: '3',
-    name: 'Quinoa Salad',
-    chef: 'Chef David',
-    image: 'https://via.placeholder.com/300x200/F0F0F0/000000?text=Quinoa+Salad', // Replace with your actual image URL
-    rating: 3.8,
+    id: 3,
+    name: "Quinoa Salad",
+    chef: "Chef Anna",
+    rating: 4.9,
+    image: images.quinoaSalad,
     isPremium: true,
   },
 ];

@@ -1,12 +1,13 @@
+// navigation/AppNavigator.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import WelcomeScreen from '../screens/WelcomeScreen';
-import MyCalorieGoals from '../screens/MyCalorieGoals'; // Add this import
+import MyCalorieGoals from '../screens/MyCalorieGoals';
 import CalorieDashboardScreen from '../screens/CalorieDashboardScreen';
 import MealTrackerScreen from '../screens/MealTrackerScreen';
 import NewMealEntryScreen from '../screens/NewMealEntryScreen';
-
+import UserProfileScreen from '../screens/UserProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ const AppNavigator = () => {
       <Stack.Screen name="CalorieDashboard" component={CalorieDashboardScreen} />
       <Stack.Screen name="MealTracker" component={MealTrackerScreen} />
       <Stack.Screen name="NewMealEntry" component={NewMealEntryScreen} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} />
     </Stack.Navigator>
   );
 };
