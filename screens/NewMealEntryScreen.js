@@ -124,12 +124,16 @@ const NewMealEntryScreen = ({ navigation, route }) => {
       dateLogged: new Date().toISOString(),
     };
 
-    Alert.alert('Meal Logged!', `Successfully logged ${mealName}.`, [
-      {
-        text: 'OK',
-        onPress: () => {
-          // Navigate back to MealTracker with the new meal data
-          navigation.navigate('MealTracker', { newMeal: newMealLog });
+   Alert.alert('Meal Logged!', `Successfully logged ${mealName}.`, [
+    {
+      text: 'OK',
+      onPress: () => {
+        // Option 1: Navigate back and pass params
+        navigation.navigate({
+          name: 'MealTracker', // or whatever your previous screen is
+          params: { newMeal: newMealLog },
+          merge: true,
+        });
         }
       }
     ]);

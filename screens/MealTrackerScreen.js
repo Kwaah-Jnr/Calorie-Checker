@@ -3,30 +3,37 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Sta
 import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
 import { mealCategories, bottomNavItems, popularMeals } from '../constants/data';
+import { MealContext } from '../context/MealContext';
 import { Button, Card, Header, TextInput, BottomNavigation } from '../components';
 
 const MealTrackerScreen = ({ navigation, route }) => {
+  const { meals: loggedMeals, addMeal } = React.useContext(MealContext);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loggedMeals, setLoggedMeals] = useState([]);
-  const [totalMealsLogged, setTotalMealsLogged] = useState(0);
+ // const [loggedMeals, setLoggedMeals] = useState([]);
+  const [totalMealsLogged, setTotalMealsLogged] = useState(loggedMeals.length);
   
   // Daily goal (can be made configurable)
   const dailyMealGoal = 6;
   const progressPercentage = Math.min(100, Math.round((totalMealsLogged / dailyMealGoal) * 100));
 
   // Handle new meal data from NewMealEntryScreen
-  useEffect(() => {
+   useEffect(() => {
     if (route.params?.newMeal) {
-      const newMeal = route.params.newMeal;
-      setLoggedMeals(prevMeals => [...prevMeals, newMeal]);
-      setTotalMealsLogged(prev => prev + 1);
-      
-      // Clear the parameter to prevent re-adding on subsequent renders
+      addMeal(route.params.newMeal);
       navigation.setParams({ newMeal: null });
     }
   }, [route.params?.newMeal]);
+  // Update total meals logged whenever loggedMeals changes
 
+  useEffect(() => {
+    setTotalMealsLogged(loggedMeals.length);
+  }, [loggedMeals]);
   // Function to get today's meals grouped by meal type
+  // This function assumes loggedMeals is an array of meal objects with a 'date' property
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // Returns date in YYYY-MM-DD format
+  };
   const getTodaysMeals = () => {
     const mealsByType = {};
     loggedMeals.forEach(meal => {
@@ -171,18 +178,12 @@ const MealTrackerScreen = ({ navigation, route }) => {
       </ScrollView>
 
       <BottomNavigation
-        items={bottomNavItems.map(item => ({
-          ...item,
-          onPress: () => {
-            if (item.routeName === 'NewMealEntry') {
-              navigation.navigate(item.routeName, { onMealLogged: handleMealLogged });
-            } else {
-              navigation.navigate(item.routeName);
-            }
-          }
-        }))}
-        activeItem="Dashboard" // Set the active item to 'Dashboard'
-      />
+  items={bottomNavItems.map(item => ({
+    ...item,
+    onPress: () => navigation.navigate(item.routeName)
+  }))}
+  activeItem="Dashboard" // Set the active item to 'Dashboard'
+/>
     </SafeAreaView>
   );
 };
