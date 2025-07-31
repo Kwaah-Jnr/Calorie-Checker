@@ -5,6 +5,7 @@ import { StatusBar } from 'react-native';
 import { colors } from './constants/colors';
 import { MealProvider } from './context/MealContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+// import { NavigationContainer } from '@react-navigation/native';
 
 function App() {
   return (

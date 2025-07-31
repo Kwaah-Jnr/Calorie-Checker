@@ -8,68 +8,73 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  Platform,
+  TextInput
 } from 'react-native';
 import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
-import { Button, Header, TextInput } from '../components';
+import { Button, Header } from '../components';
 import { Picker } from '@react-native-picker/picker';
 import { MealContext } from '../context/MealContext';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const NewMealEntryScreen = ({ navigation, route }) => {
-  // Check if there's prefill data from route params
+  const { addMeal, goals } = useContext(MealContext);
   const prefillData = route.params?.prefillData || null;
   
-  // State to manage a dynamic list of food entries
+  // Food entries state with calorie tracking
   const [foodEntries, setFoodEntries] = useState([
-    { name: 'Grilled chicken', quantity: '250', unit: 'grams' },
+    { name: '', quantity: '', unit: 'grams', calories: '' }
   ]);
 
-  // Simplified time state to match the new UI
+  // Time and meal type
   const [time, setTime] = useState({ hour: '07', minute: '00' });
   const [mealName, setMealName] = useState('Lunch');
+  const [isCalculating, setIsCalculating] = useState(false);
 
-  // Handle prefill data when component mounts
+  // Handle prefill data
   useEffect(() => {
-    if (prefillData && prefillData.foods) {
-      setFoodEntries(prefillData.foods);
+    if (prefillData?.foods) {
+      setFoodEntries(prefillData.foods.map(food => ({
+        name: food.name || '',
+        quantity: food.quantity || '',
+        unit: food.unit || 'grams',
+        calories: food.calories || ''
+      })));
+    }
+    if (prefillData?.mealType) {
+      setMealName(prefillData.mealType);
     }
   }, [prefillData]);
 
-  // Current time initialization
+  // Initialize current time and meal type
   useEffect(() => {
-  const initializeTime = () => {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     setTime({ hour: hours, minute: minutes });
 
-    // Corrected meal type detection
     const hour = now.getHours();
     const mealTypes = [
-      { name: 'Breakfast', start: 5, end: 11 },   // 5AM-11AM
-      { name: 'Lunch', start: 12, end: 16 },       // 12PM-4PM
-      { name: 'Dinner', start: 17, end: 20 },      // 5PM-8PM
-      { name: 'Snack' }                            // Default
+      { name: 'Breakfast', start: 5, end: 11 },
+      { name: 'Lunch', start: 12, end: 16 },
+      { name: 'Dinner', start: 17, end: 20 },
+      { name: 'Snack' }
     ];
 
-    const currentMeal = mealTypes.find((type) => {
-      if (type.name === 'Snack') return false; // Handle snack separately
+    const currentMeal = mealTypes.find(type => {
+      if (type.name === 'Snack') return false;
       return hour >= type.start && hour <= type.end;
-    }) || mealTypes[3]; // Default to Snack
+    }) || mealTypes[3];
 
-    // Special handling for snack time (9PM-4AM)
     if (!currentMeal || hour >= 21 || hour <= 4) {
       setMealName('Snack');
-    } else {
+    } else if (!prefillData?.mealType) {
       setMealName(currentMeal.name);
     }
-  };
+  }, []);
 
-  initializeTime();
-}, []);
-  
-
-  // --- Time Management ---
+  // Time management
   const incrementTime = () => {
     const currentHour = parseInt(time.hour);
     const newHour = (currentHour + 1) % 24;
@@ -82,21 +87,27 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     setTime({ ...time, hour: newHour.toString().padStart(2, '0') });
   };
 
-  // --- Handlers for Dynamic List ---
-
-  // Updates a specific field (name, quantity, unit) of a food item
+  // Food entry handlers
   const handleUpdateEntry = (index, field, value) => {
     const newEntries = [...foodEntries];
     newEntries[index][field] = value;
+    
+    // Auto-calculate calories if quantity changes for certain foods
+    if (field === 'quantity' && value && newEntries[index].name) {
+      const food = newEntries[index];
+      const calorieInfo = getCalorieInfo(food.name);
+      if (calorieInfo) {
+        newEntries[index].calories = Math.round(parseFloat(value) * calorieInfo.caloriesPerUnit).toString();
+      }
+    }
+    
     setFoodEntries(newEntries);
   };
 
-  // Adds a new, empty food item to the list
   const handleAddEntry = () => {
-    setFoodEntries([...foodEntries, { name: '', quantity: '', unit: 'grams' }]);
+    setFoodEntries([...foodEntries, { name: '', quantity: '', unit: 'grams', calories: '' }]);
   };
 
-  // Removes a food item from the list
   const handleRemoveEntry = (index) => {
     if (foodEntries.length > 1) {
       const newEntries = foodEntries.filter((_, i) => i !== index);
@@ -104,28 +115,39 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     }
   };
 
-  // Handle icon selection to prefill food name
-  const handleIconSelect = (foodName) => {
-    const iconFoods = {
-      '☕': 'Coffee',
-      '🍴': 'Meal',
-      '🍎': 'Apple',
-      '🥕': 'Carrot'
+  // Quick add foods with calorie data
+  const quickFoods = [
+    { emoji: '☕', name: 'Coffee', calories: 2, unit: 'cup' },
+    { emoji: '🍎', name: 'Apple', calories: 95, unit: 'medium' },
+    { emoji: '🍗', name: 'Chicken Breast', calories: 165, unit: '100g' },
+    { emoji: '🍚', name: 'White Rice', calories: 130, unit: '100g' }
+  ];
+
+  // Get calorie info for common foods
+  const getCalorieInfo = (foodName) => {
+    const foodMap = {
+      'Coffee': { caloriesPerUnit: 2, unit: 'cup' },
+      'Apple': { caloriesPerUnit: 95, unit: 'medium' },
+      'Chicken Breast': { caloriesPerUnit: 165, unit: '100g' },
+      'White Rice': { caloriesPerUnit: 130, unit: '100g' },
+      'Avocado Toast': { caloriesPerUnit: 220, unit: 'slice' }
     };
-    
-    const newEntry = { name: iconFoods[foodName] || 'New Item', quantity: '1', unit: 'serving' };
-    setFoodEntries([...foodEntries, newEntry]);
+    return foodMap[foodName];
   };
 
-  const {addMeal} = useContext(MealContext);
+  // Calculate total calories for the meal
+  const calculateTotalCalories = () => {
+    return foodEntries.reduce((total, entry) => {
+      return total + (parseInt(entry.calories) || 0);
+    }, 0);
+  };
 
-  // --- Main Log Handler ---
+  // Main log handler
   const handleLogMeal = () => {
-
-    // Basic validation
     const isInvalid = foodEntries.some(
-      (entry) => !entry.name.trim() || !entry.quantity.trim()
+      entry => !entry.name.trim() || !entry.quantity.trim()
     );
+
     if (isInvalid) {
       Alert.alert(
         'Missing Information',
@@ -134,54 +156,74 @@ const NewMealEntryScreen = ({ navigation, route }) => {
       return;
     }
 
+    const totalCalories = calculateTotalCalories();
+    const remainingCalories = goals?.dailyCalories ? goals.dailyCalories - totalCalories : null;
+
     const newMealLog = {
-      id: Date.now().toString(), // Simple ID generation
+      id: Date.now().toString(),
       mealType: mealName,
       time: `${time.hour}:${time.minute}`,
-      foods: foodEntries.filter(entry => entry.name.trim()), // Remove empty entries
+      foods: foodEntries.map(entry => ({
+        ...entry,
+        calories: entry.calories || '0'
+      })),
+      totalCalories,
       dateLogged: new Date().toISOString(),
     };
 
-    addMeal(newMealLog); // Add to context
+    addMeal(newMealLog);
 
-    Alert.alert('Meal Logged!', `Successfully logged ${mealName}.`, [
-    {
-      text: 'OK',
-      onPress: () => {
-        navigation.navigate('MealTracker');
-      }
-    }
-  ]);
-};
-    
+    Alert.alert(
+      'Meal Logged!',
+      `Successfully logged ${mealName} (${totalCalories} cal).` +
+      (remainingCalories !== null ? `\n\nRemaining daily calories: ${remainingCalories}` : ''),
+      [{
+        text: 'OK',
+        onPress: () => navigation.navigate('MealTracker')
+      }]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
 
-      <Header title="New Meal Entry" onBackPress={() => navigation.goBack()} />
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* --- Enhanced Time Picker Display --- */}
-        <View style={styles.timePicker}>
-          <TouchableOpacity onPress={incrementTime}>
-            <Text style={styles.timeScroller}>
-              {(parseInt(time.hour) + 1).toString().padStart(2, '0')}
-            </Text>
+      <Header 
+        title="New Meal Entry" 
+        onBackPress={() => navigation.goBack()}
+        rightComponent={
+          <TouchableOpacity onPress={() => setIsCalculating(!isCalculating)}>
+            <Icon 
+              name={isCalculating ? 'calculate' : 'calculate'} 
+              size={24} 
+              color={isCalculating ? colors.primary : colors.text} 
+            />
           </TouchableOpacity>
+        }
+      />
+
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Time Picker */}
+        <View style={styles.timePicker}>
+          <TouchableOpacity onPress={decrementTime} style={styles.timeButton}>
+            <Icon name="chevron-left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          
           <View style={styles.timeDisplay}>
             <Text style={styles.timeText}>{time.hour}</Text>
             <Text style={styles.timeText}>:</Text>
             <Text style={styles.timeText}>{time.minute}</Text>
           </View>
-          <TouchableOpacity onPress={decrementTime}>
-            <Text style={styles.timeScroller}>
-              {(parseInt(time.hour) - 1 < 0 ? 23 : parseInt(time.hour) - 1).toString().padStart(2, '0')}
-            </Text>
+          
+          <TouchableOpacity onPress={incrementTime} style={styles.timeButton}>
+            <Icon name="chevron-right" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
 
-        {/* --- Meal Type Selector --- */}
+        {/* Meal Type Selector */}
         <View style={styles.mealTypeContainer}>
           <Text style={styles.sectionTitle}>Meal Type</Text>
           <View style={styles.mealTypeButtons}>
@@ -205,42 +247,47 @@ const NewMealEntryScreen = ({ navigation, route }) => {
           </View>
         </View>
 
+        {/* Meal Title */}
         <Text style={styles.mealNameTitle}>{mealName}</Text>
 
-        {/* --- Dynamic Food Entries List --- */}
+        {/* Food Entries List */}
         {foodEntries.map((item, index) => (
           <View key={index} style={styles.foodEntryContainer}>
             <View style={styles.foodEntryHeader}>
               <TextInput
-                placeholder="e.g., Avocado Toast"
+                placeholder="Food name (e.g., Avocado Toast)"
                 value={item.name}
                 onChangeText={(text) => handleUpdateEntry(index, 'name', text)}
                 style={styles.foodNameInput}
+                autoCapitalize="words"
               />
               {foodEntries.length > 1 && (
                 <TouchableOpacity 
                   style={styles.removeButton}
                   onPress={() => handleRemoveEntry(index)}
                 >
-                  <Text style={styles.removeButtonText}>×</Text>
+                  <Icon name="close" size={20} color={colors.white} />
                 </TouchableOpacity>
               )}
             </View>
+            
             <View style={styles.quantityRow}>
-              <View style={styles.halfInput}>
+              <View style={styles.quantityInput}>
                 <TextInput
                   placeholder="Quantity"
                   keyboardType="numeric"
                   value={item.quantity}
                   onChangeText={(text) => handleUpdateEntry(index, 'quantity', text)}
+                  style={styles.input}
                 />
               </View>
-              <View style={styles.pickerContainer}>
+              
+              <View style={styles.unitPicker}>
                 <Picker
                   selectedValue={item.unit}
-                  onValueChange={(itemValue) => handleUpdateEntry(index, 'unit', itemValue)}
+                  onValueChange={(value) => handleUpdateEntry(index, 'unit', value)}
                   style={styles.picker}
-                  itemStyle={styles.pickerItem}
+                  dropdownIconColor={colors.text}
                 >
                   <Picker.Item label="grams" value="grams" />
                   <Picker.Item label="oz" value="oz" />
@@ -252,49 +299,77 @@ const NewMealEntryScreen = ({ navigation, route }) => {
                 </Picker>
               </View>
             </View>
+
+            {isCalculating && (
+              <View style={styles.calorieRow}>
+                <TextInput
+                  placeholder="Calories"
+                  keyboardType="numeric"
+                  value={item.calories}
+                  onChangeText={(text) => handleUpdateEntry(index, 'calories', text)}
+                  style={styles.calorieInput}
+                />
+                <Text style={styles.calorieLabel}>cal</Text>
+              </View>
+            )}
           </View>
         ))}
 
-        <TouchableOpacity style={styles.addItemButton} onPress={handleAddEntry}>
-          <Text style={styles.addItemButtonText}>+ Add another item</Text>
+        {/* Add Food Button */}
+        <TouchableOpacity 
+          style={styles.addItemButton} 
+          onPress={handleAddEntry}
+          activeOpacity={0.7}
+        >
+          <Icon name="add" size={24} color={colors.primary} />
+          <Text style={styles.addItemButtonText}>Add another food</Text>
         </TouchableOpacity>
 
-        {/* --- Icon Shortcuts --- */}
+        {/* Quick Add Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Add</Text>
           <View style={styles.iconRow}>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              onPress={() => handleIconSelect('☕')}
-            >
-              <Text style={styles.iconEmoji}>☕</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              onPress={() => handleIconSelect('🍴')}
-            >
-              <Text style={styles.iconEmoji}>🍴</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              onPress={() => handleIconSelect('🍎')}
-            >
-              <Text style={styles.iconEmoji}>🍎</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              onPress={() => handleIconSelect('🥕')}
-            >
-              <Text style={styles.iconEmoji}>🥕</Text>
-            </TouchableOpacity>
+            {quickFoods.map((food) => (
+              <TouchableOpacity
+                key={food.emoji}
+                style={styles.iconButton}
+                onPress={() => {
+                  const newEntry = {
+                    name: food.name,
+                    quantity: '1',
+                    unit: food.unit,
+                    calories: food.calories.toString()
+                  };
+                  setFoodEntries([...foodEntries, newEntry]);
+                }}
+              >
+                <Text style={styles.iconEmoji}>{food.emoji}</Text>
+                <Text style={styles.iconText}>{food.name}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
-        {/* --- Log Meal Button --- */}
+        {/* Total Calories */}
+        {isCalculating && (
+          <View style={styles.totalCaloriesContainer}>
+            <Text style={styles.totalCaloriesText}>
+              Total: {calculateTotalCalories()} calories
+            </Text>
+            {goals?.dailyCalories && (
+              <Text style={styles.remainingCaloriesText}>
+                Remaining: {Math.max(0, goals.dailyCalories - calculateTotalCalories())} calories
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Log Meal Button */}
         <Button
-          title="Log Meal"
+          title={`Log ${mealName}`}
           onPress={handleLogMeal}
           style={styles.logMealButton}
+          icon="check"
         />
       </ScrollView>
     </SafeAreaView>
@@ -311,33 +386,39 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   timePicker: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    marginBottom: 25,
   },
-  timeScroller: {
-    fontSize: 20,
-    color: colors.textSecondary || '#9CA3AF',
-    marginVertical: 4,
-    padding: 8,
+  timeButton: {
+    padding: 15,
   },
   timeDisplay: {
-    backgroundColor: colors.primary || '#F59E0B',
+    backgroundColor: colors.primary,
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 15,
     paddingHorizontal: 30,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '60%',
+    marginHorizontal: 10,
+    minWidth: 120,
   },
   timeText: {
     color: colors.white,
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginHorizontal: 5,
+    marginHorizontal: 2,
   },
   mealTypeContainer: {
     marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
   },
   mealTypeButtons: {
     flexDirection: 'row',
@@ -347,21 +428,21 @@ const styles = StyleSheet.create({
   mealTypeButton: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: ui.borderRadius || 8,
+    paddingHorizontal: 8,
+    borderRadius: ui.borderRadius,
     borderWidth: 1,
-    borderColor: colors.grayDark || '#D1D5DB',
+    borderColor: colors.grayLight,
     backgroundColor: colors.white,
     alignItems: 'center',
   },
   mealTypeButtonActive: {
-    backgroundColor: colors.primary || '#F59E0B',
-    borderColor: colors.primary || '#F59E0B',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   mealTypeButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text || '#2D2D2D',
+    color: colors.text,
   },
   mealTypeButtonTextActive: {
     color: colors.white,
@@ -369,94 +450,141 @@ const styles = StyleSheet.create({
   mealNameTitle: {
     fontSize: 22,
     fontWeight: '600',
-    color: colors.text || '#2D2D2D',
-    marginBottom: 16,
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   foodEntryContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
+    backgroundColor: colors.grayLight,
+    borderRadius: ui.borderRadius,
+    padding: 15,
   },
   foodEntryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 10,
   },
   foodNameInput: {
     flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: ui.borderRadius,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.gray,
   },
   removeButton: {
-    marginLeft: 12,
+    marginLeft: 10,
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#ff4444',
+    backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  removeButtonText: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   quantityRow: {
     flexDirection: 'row',
-    marginTop: 8,
+    gap: 10,
+    marginBottom: 10,
   },
-  halfInput: {
+  quantityInput: {
     flex: 1,
-    marginRight: 8,
   },
-  pickerContainer: {
+  unitPicker: {
     flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: ui.borderRadius,
     borderWidth: 1,
-    borderColor: colors.grayDark || '#D1D5DB',
-    borderRadius: ui.borderRadius || 8,
-    justifyContent: 'center',
-    backgroundColor: colors.gray || '#F3F4F6',
+    borderColor: colors.gray,
+    overflow: 'hidden',
   },
   picker: {
     width: '100%',
     height: 50,
   },
-  pickerItem: {
-    height: 50,
-  },
-  addItemButton: {
+  input: {
+    backgroundColor: colors.white,
+    borderRadius: ui.borderRadius,
     padding: 12,
     borderWidth: 1,
-    borderColor: colors.primary || '#F59E0B',
-    borderStyle: 'dashed',
-    borderRadius: ui.borderRadius || 8,
+    borderColor: colors.gray,
+  },
+  calorieRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    gap: 10,
+  },
+  calorieInput: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: ui.borderRadius,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.gray,
+  },
+  calorieLabel: {
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  addItemButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+    borderRadius: ui.borderRadius,
+    marginBottom: 25,
   },
   addItemButtonText: {
-    color: colors.primary || '#F59E0B',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
   },
   section: {
     marginBottom: 25,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 12,
-  },
   iconRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   iconButton: {
-    backgroundColor: colors.primary || '#F59E0B',
+    backgroundColor: colors.primaryLight,
     flex: 1,
-    marginHorizontal: 5,
-    height: 60,
-    borderRadius: 12,
-    justifyContent: 'center',
+    minWidth: '22%',
+    padding: 12,
+    borderRadius: 10,
     alignItems: 'center',
   },
   iconEmoji: {
-    fontSize: 28,
+    fontSize: 24,
+    marginBottom: 5,
+  },
+  iconText: {
+    fontSize: 12,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  totalCaloriesContainer: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: ui.borderRadius,
+    padding: 15,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  totalCaloriesText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  remainingCaloriesText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 5,
   },
   logMealButton: {
     marginTop: 10,

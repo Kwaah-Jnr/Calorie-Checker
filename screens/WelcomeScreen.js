@@ -22,7 +22,7 @@ const WelcomeScreen = ({ navigation }) => {
       <View style={styles.buttonContainer}>
         <Button
           title="Start now"
-          onPress={() => navigation.navigate('MealTracker')}
+          onPress={() => navigation.navigate('MainTabs'/*, { screen: 'MealTracker' }*/)}
         />
       </View>
     </SafeAreaView>

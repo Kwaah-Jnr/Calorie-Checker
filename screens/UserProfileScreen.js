@@ -113,7 +113,7 @@ const UserProfileScreen = ({ navigation }) => {
   title="User Profile"
   onBackPress={() => navigation.goBack()}
 />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, {paddingBottom: 16}]}>
         <Text style={styles.sectionTitle}>Personal Information</Text>
 
         <Card style={styles.inputCard}>
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
     scrollContent: {
     padding: ui.padding,
-    paddingBottom: 100,
+    // paddingBottom: 100,
   },
   sectionTitle: {
     fontSize: 20,

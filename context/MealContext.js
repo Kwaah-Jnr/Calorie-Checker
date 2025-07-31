@@ -6,6 +6,7 @@ export const MealContext = createContext();
 export const MealProvider = ({ children }) => {
   const [meals, setMeals] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
+  const [goals, setGoals] = useState(null);
 
   // Load data from storage on startup
   useEffect(() => {
@@ -71,6 +72,8 @@ export const MealProvider = ({ children }) => {
       deleteMeal,
       updateMeal,
       getTodaysMeals,
+      goals,
+      setGoals,
       updateProfile
     }}>
       {children}

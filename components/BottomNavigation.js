@@ -3,55 +3,87 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
-
-// Only import Ionicons if that's the only type you're using.
-// If you use FontAwesome5 for other icons, keep it.
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-// import FontAwesome5 from 'react-native-vector-icons/FontAwesome5'; // Remove if not needed for any other icon
 
-const BottomNavigation = ({
-  items = [],
-  activeItem,
-  style,
-}) => {
+const BottomNavigation = ({ state, descriptors, navigation }) => {
+  const route = useRoute();
+  
+  // Define your tab items
+  const items = [
+    {
+      name: 'Dashboard',
+      icon: 'home',
+      type: 'Ionicons',
+      routeName: 'Dashboard'
+    },
+    {
+      name: 'Log',
+      icon: 'list',
+      type: 'Ionicons',
+      routeName: 'Log'
+    },
+    {
+      name: 'NEW',
+      icon: 'add',
+      type: 'Ionicons',
+      routeName: 'NEW',
+      isCentral: true
+    },
+    {
+      name: 'Goals',
+      icon: 'flag',
+      type: 'Ionicons',
+      routeName: 'Goals'
+    },
+    {
+      name: 'User',
+      icon: 'person',
+      type: 'Ionicons',
+      routeName: 'User'
+    }
+  ];
+
   const getIconComponent = (iconName, iconType, iconSize, iconColor) => {
     switch (iconType) {
       case 'Ionicons':
         return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
-      // If you removed FontAwesome5, remove its case too:
-      // case 'FontAwesome5':
-      //   return <FontAwesome5 name={iconName} size={iconSize} color={iconColor} />;
       default:
-        // Fallback for plain text icons (e.g., if type is not recognized)
         return <Text style={{ fontSize: iconSize, color: iconColor }}>{iconName}</Text>;
     }
   };
 
+  const handleTabPress = (item) => {
+    navigation.navigate(item.routeName);
+  };
+
+  // Get active route name
+  const activeRoute = state.routes[state.index].name;
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container]}>
       {items.map((item) => {
-        const isActive = activeItem === item.name;
+        const isActive = activeRoute === item.routeName;
 
         if (item.isCentral) {
           return (
             <TouchableOpacity
-              key={item.name}
+              key={item.routeName}
               style={styles.centralButtonContainer}
-              onPress={item.onPress}
+              onPress={() => handleTabPress(item)}
             >
               <View style={styles.centralButton}>
-                {/* Ensure the size and color here are correct for your '+' icon */}
                 {getIconComponent(item.icon, item.type, 30, colors.white)}
               </View>
-              <Text style={styles.centralButtonLabel}>NEW</Text>
+              <Text style={styles.centralButtonLabel}>{item.name}</Text>
             </TouchableOpacity>
           );
         } else {
           return (
             <TouchableOpacity
-              key={item.name}
+              key={item.routeName}
               style={styles.navItem}
-              onPress={item.onPress}
+              onPress={() => handleTabPress(item)}
             >
               {getIconComponent(
                 item.icon,
@@ -59,12 +91,7 @@ const BottomNavigation = ({
                 24,
                 isActive ? colors.primary : colors.textSecondary
               )}
-              <Text
-                style={[
-                  styles.navLabel,
-                  isActive && styles.navLabelActive,
-                ]}
-              >
+              <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
                 {item.name}
               </Text>
             </TouchableOpacity>
@@ -99,6 +126,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
+    marginHorizontal: 2,
   },
   navLabel: {
     fontSize: 12,
@@ -129,9 +157,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8,
   },
-  centralButtonIcon: {
-    // These styles are handled by the getIconComponent now
-  },
+
   centralButtonLabel: {
     fontSize: 12,
     color: colors.orange,

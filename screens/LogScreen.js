@@ -42,7 +42,7 @@ const LogScreen = ({ navigation }) => {
         data={meals}
         keyExtractor={(item) => item.id}
         renderItem={renderMealItem}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, {paddingBottom: 16} ]}
         ListEmptyComponent={
           <Text style={styles.noMealsText}>No meals logged yet. Add a new meal!</Text>
         }
