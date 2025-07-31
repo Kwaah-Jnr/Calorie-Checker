@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, StatusBar, Alert, ImageBackground, Image } from 'react-native';
 import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
@@ -7,36 +7,18 @@ import { MealContext } from '../context/MealContext';
 import { Button, Card, Header, TextInput, BottomNavigation } from '../components';
 
 const MealTrackerScreen = ({ navigation, route }) => {
-  const { meals: loggedMeals, addMeal } = React.useContext(MealContext);
-  const [searchQuery, setSearchQuery] = useState('');
- // const [loggedMeals, setLoggedMeals] = useState([]);
-  const [totalMealsLogged, setTotalMealsLogged] = useState(loggedMeals.length);
+    const { meals, addMeal } = useContext(MealContext);
+    const [searchQuery, setSearchQuery] = useState('');
+    const totalMealsLogged = meals.length;
   
   // Daily goal (can be made configurable)
   const dailyMealGoal = 6;
   const progressPercentage = Math.min(100, Math.round((totalMealsLogged / dailyMealGoal) * 100));
 
-  // Handle new meal data from NewMealEntryScreen
-   useEffect(() => {
-    if (route.params?.newMeal) {
-      addMeal(route.params.newMeal);
-      navigation.setParams({ newMeal: null });
-    }
-  }, [route.params?.newMeal]);
-  // Update total meals logged whenever loggedMeals changes
-
-  useEffect(() => {
-    setTotalMealsLogged(loggedMeals.length);
-  }, [loggedMeals]);
-  // Function to get today's meals grouped by meal type
-  // This function assumes loggedMeals is an array of meal objects with a 'date' property
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0]; // Returns date in YYYY-MM-DD format
-  };
+  
   const getTodaysMeals = () => {
     const mealsByType = {};
-    loggedMeals.forEach(meal => {
+    meals.forEach(meal => {
       if (!mealsByType[meal.mealType]) {
         mealsByType[meal.mealType] = [];
       }
@@ -93,35 +75,7 @@ const MealTrackerScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Today's Logged Meals Section */}
-        {Object.keys(todaysMeals).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Meals</Text>
-            {Object.entries(todaysMeals).map(([mealType, meals]) => (
-              <View key={mealType} style={styles.mealTypeContainer}>
-                <Text style={styles.mealTypeTitle}>{mealType}</Text>
-                {meals.map((meal, index) => (
-                  <Card key={`${mealType}-${index}`} style={styles.loggedMealCard}>
-                    <View style={styles.mealHeader}>
-                      <Text style={styles.mealTime}>{meal.time}</Text>
-                      <TouchableOpacity onPress={() => Alert.alert('Edit Meal', `Edit ${meal.mealType}`)}>
-                        <Text style={styles.editIcon}>✏️</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.foodItemsList}>
-                      {meal.foods.map((food, foodIndex) => (
-                        <View key={foodIndex} style={styles.foodItem}>
-                          <Text style={styles.foodName}>{food.name}</Text>
-                          <Text style={styles.foodQuantity}>{food.quantity} {food.unit}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </Card>
-                ))}
-              </View>
-            ))}
-          </View>
-        )}
+        
 
         {/* Most Popular meals Section */}
         <View style={styles.section}>

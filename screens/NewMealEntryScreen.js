@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
 import { Button, Header, TextInput } from '../components';
 import { Picker } from '@react-native-picker/picker';
+import { MealContext } from '../context/MealContext';
 
 const NewMealEntryScreen = ({ navigation, route }) => {
   // Check if there's prefill data from route params
@@ -116,8 +117,11 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     setFoodEntries([...foodEntries, newEntry]);
   };
 
+  const {addMeal} = useContext(MealContext);
+
   // --- Main Log Handler ---
   const handleLogMeal = () => {
+
     // Basic validation
     const isInvalid = foodEntries.some(
       (entry) => !entry.name.trim() || !entry.quantity.trim()
@@ -138,20 +142,18 @@ const NewMealEntryScreen = ({ navigation, route }) => {
       dateLogged: new Date().toISOString(),
     };
 
-   Alert.alert('Meal Logged!', `Successfully logged ${mealName}.`, [
+    addMeal(newMealLog); // Add to context
+
+    Alert.alert('Meal Logged!', `Successfully logged ${mealName}.`, [
     {
       text: 'OK',
       onPress: () => {
-        // Option 1: Navigate back and pass params
-        navigation.navigate({
-          name: 'MealTracker', // or whatever your previous screen is
-          params: { newMeal: newMealLog },
-          merge: true,
-        });
-        }
+        navigation.navigate('MealTracker');
       }
-    ]);
-  };
+    }
+  ]);
+};
+    
 
   return (
     <SafeAreaView style={styles.container}>

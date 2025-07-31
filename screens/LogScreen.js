@@ -1,56 +1,52 @@
-// screens/LogScreen.js (create this file if it doesn't exist)
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import React, { useContext } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { Header } from '../components';
-import { colors } from '../constants/colors'; 
+import { colors } from '../constants/colors';
+import { MealContext } from '../context/MealContext';
 
-const LogScreen = ({ navigation, route }) => {
-  // State to hold all the logged meals
-  const [loggedMeals, setLoggedMeals] = useState([]);
+const LogScreen = ({ navigation }) => {
+  const { meals, deleteMeal } = useContext(MealContext);
 
-  // UseEffect to update loggedMeals when a new meal is passed via route params
-  useEffect(() => {
-    if (route.params?.newMeal) {
-      const newMeal = route.params.newMeal;
-      setLoggedMeals(prevMeals => [...prevMeals, newMeal]);
-
-      // Clear the parameter to prevent re-adding on subsequent renders
-      navigation.setParams({ newMeal: null });
-    }
-  }, [route.params?.newMeal]); // Dependency array ensures this runs only when newMeal param changes
-
-  // Function to render each meal item in the FlatList
   const renderMealItem = ({ item }) => (
     <View style={styles.mealCard}>
-      <Text style={styles.mealName}>{item.mealName}</Text>
-      <Text style={styles.mealTime}>Time: {item.time}</Text>
-      {/* Conditionally render food details if available */}
-      {item.foods && item.foods.length > 0 && (
-        <View style={styles.foodList}>
-          {item.foods.map((food, index) => (
-            <Text key={index} style={styles.foodItem}>- {food.foodName} ({food.calories} kcal)</Text>
-          ))}
+      <View style={styles.mealHeader}>
+        <Text style={styles.mealType}>{item.mealType}</Text>
+        <Text style={styles.mealTime}>{item.time}</Text>
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={() => deleteMeal(item.id)}
+        >
+          <Text style={styles.deleteText}>×</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {item.foods?.map((food, index) => (
+        <View key={index} style={styles.foodItem}>
+          <Text style={styles.foodName}>{food.name}</Text>
+          <Text style={styles.foodDetails}>
+            {food.quantity} {food.unit} • {food.calories || '--'} kcal
+          </Text>
         </View>
-      )}
+      ))}
     </View>
   );
 
   return (
     <View style={styles.container}>
       <Header 
-  title="Meal Log"
-  onBackPress={() => navigation.goBack()}
-/>
-      {loggedMeals.length > 0 ? (
-        <FlatList
-          data={loggedMeals}
-          keyExtractor={(item, index) => index.toString()} // Using index as key, consider a unique ID if available
-          renderItem={renderMealItem}
-          contentContainerStyle={styles.listContent}
-        />
-      ) : (
-        <Text style={styles.noMealsText}>No meals logged yet. Add a new meal!</Text>
-      )}
+        title="Meal Log"
+        onBackPress={() => navigation.goBack()}
+      />
+      
+      <FlatList
+        data={meals}
+        keyExtractor={(item) => item.id}
+        renderItem={renderMealItem}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <Text style={styles.noMealsText}>No meals logged yet. Add a new meal!</Text>
+        }
+      />
     </View>
   );
 };
@@ -58,52 +54,71 @@ const LogScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: colors.background,
   },
-   listContent: {
-    paddingBottom: 20, // Add some padding at the bottom for scrolling
+  listContent: {
+    padding: 16,
   },
   mealCard: {
-    backgroundColor: '#fff',
-    padding: 18,
-    borderRadius: 10,
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  mealName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#444',
-  },
-  mealTime: {
-    fontSize: 15,
-    color: '#777',
+  mealHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  foodList: {
-    marginTop: 5,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 8,
+  mealType: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  mealTime: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  deleteButton: {
+    padding: 4,
+    borderRadius: 15,
+    backgroundColor: '#ff4444',
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteText: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   foodItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  foodName: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  foodDetails: {
     fontSize: 14,
-    marginLeft: 10,
-    color: '#555',
-    lineHeight: 20,
+    color: colors.textSecondary,
   },
   noMealsText: {
     textAlign: 'center',
-    marginTop: 50,
-    fontSize: 17,
-    color: '#999',
-    fontStyle: 'italic',
+    marginTop: 32,
+    fontSize: 16,
+    color: colors.textSecondary,
   }
 });
 

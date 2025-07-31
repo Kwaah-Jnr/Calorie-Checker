@@ -1,4 +1,3 @@
-// src/context/MealContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -40,7 +39,24 @@ export const MealProvider = ({ children }) => {
   }, [meals, userProfile]);
 
   const addMeal = (newMeal) => {
-    setMeals(prev => [...prev, newMeal]);
+    setMeals(prev => [newMeal, ...prev]); // Newest meals first
+  };
+
+  const deleteMeal = (mealId) => {
+    setMeals(prev => prev.filter(meal => meal.id !== mealId));
+  };
+
+  const updateMeal = (updatedMeal) => {
+    setMeals(prev => prev.map(meal => 
+      meal.id === updatedMeal.id ? updatedMeal : meal
+    ));
+  };
+
+  const getTodaysMeals = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return meals.filter(meal => 
+      meal.dateLogged && meal.dateLogged.split('T')[0] === today
+    );
   };
 
   const updateProfile = (profileData) => {
@@ -48,7 +64,15 @@ export const MealProvider = ({ children }) => {
   };
 
   return (
-    <MealContext.Provider value={{ meals, userProfile, addMeal, updateProfile }}>
+    <MealContext.Provider value={{ 
+      meals,
+      userProfile,
+      addMeal,
+      deleteMeal,
+      updateMeal,
+      getTodaysMeals,
+      updateProfile
+    }}>
       {children}
     </MealContext.Provider>
   );
