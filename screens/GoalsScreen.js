@@ -15,18 +15,15 @@ const GoalsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Top Bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.screenTitle}>Goals</Text>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Text style={styles.settingsIcon}>⚙</Text>
-        </TouchableOpacity>
-      </View>
+      <Header 
+  title="Goals"
+  onBackPress={() => navigation.goBack()}
+  rightComponent={
+    <TouchableOpacity style={styles.settingsButton}>
+      <Text style={styles.settingsIcon}>⚙</Text>
+    </TouchableOpacity>
+  }
+/>
 
       <ScrollView style={styles.content}>
         <Text style={styles.sectionHeader}>Set Your Goals</Text>
@@ -61,37 +58,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-    height: 60,
-  },
-  backButton: {
-    padding: 5,
-  },
-  backArrow: {
-    fontSize: 20,
-    color: '#333333',
-  },
-  screenTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333333',
-  },
-  settingsButton: {
-    padding: 5,
-  },
-  settingsIcon: {
-    fontSize: 20,
-    color: '#666666',
-  },
-  content: {
+    content: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 20,

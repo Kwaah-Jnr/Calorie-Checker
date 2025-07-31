@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import WelcomeScreen from '../screens/WelcomeScreen';
 import GoalsScreen from '../screens/GoalsScreen';
-import CalorieDashboardScreen from '../screens/CalorieDashboardScreen';
+// import CalorieDashboardScreen from '../screens/CalorieDashboardScreen';
 import MealTrackerScreen from '../screens/MealTrackerScreen';
 import NewMealEntryScreen from '../screens/NewMealEntryScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';

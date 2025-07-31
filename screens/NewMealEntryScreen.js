@@ -36,23 +36,37 @@ const NewMealEntryScreen = ({ navigation, route }) => {
 
   // Current time initialization
   useEffect(() => {
+  const initializeTime = () => {
     const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
     setTime({ hour: hours, minute: minutes });
 
-    // Auto-detect meal type based on current time
+    // Corrected meal type detection
     const hour = now.getHours();
-    if (hour >= 5 && hour < 11) {
-      setMealName('Breakfast');
-    } else if (hour >= 11 && hour < 16) {
-      setMealName('Lunch');
-    } else if (hour >= 16 && hour < 21) {
-      setMealName('Dinner');
-    } else {
+    const mealTypes = [
+      { name: 'Breakfast', start: 5, end: 11 },   // 5AM-11AM
+      { name: 'Lunch', start: 12, end: 16 },       // 12PM-4PM
+      { name: 'Dinner', start: 17, end: 20 },      // 5PM-8PM
+      { name: 'Snack' }                            // Default
+    ];
+
+    const currentMeal = mealTypes.find((type) => {
+      if (type.name === 'Snack') return false; // Handle snack separately
+      return hour >= type.start && hour <= type.end;
+    }) || mealTypes[3]; // Default to Snack
+
+    // Special handling for snack time (9PM-4AM)
+    if (!currentMeal || hour >= 21 || hour <= 4) {
       setMealName('Snack');
+    } else {
+      setMealName(currentMeal.name);
     }
-  }, []);
+  };
+
+  initializeTime();
+}, []);
+  
 
   // --- Time Management ---
   const incrementTime = () => {

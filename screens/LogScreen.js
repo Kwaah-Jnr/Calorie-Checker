@@ -1,6 +1,8 @@
 // screens/LogScreen.js (create this file if it doesn't exist)
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { Header } from '../components';
+import { colors } from '../constants/colors'; 
 
 const LogScreen = ({ navigation, route }) => {
   // State to hold all the logged meals
@@ -35,7 +37,10 @@ const LogScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Meal Log</Text>
+      <Header 
+  title="Meal Log"
+  onBackPress={() => navigation.goBack()}
+/>
       {loggedMeals.length > 0 ? (
         <FlatList
           data={loggedMeals}
@@ -56,15 +61,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f8f8f8',
   },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 25,
-    textAlign: 'center',
-    color: '#333',
-    marginTop: 20,
-  },
-  listContent: {
+   listContent: {
     paddingBottom: 20, // Add some padding at the bottom for scrolling
   },
   mealCard: {

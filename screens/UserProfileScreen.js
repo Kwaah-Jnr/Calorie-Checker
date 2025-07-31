@@ -110,13 +110,9 @@ const UserProfileScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title="User Profile"
-        leftComponent={
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>←</Text>
-          </TouchableOpacity>
-        }
-      />
+  title="User Profile"
+  onBackPress={() => navigation.goBack()}
+/>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>Personal Information</Text>
 
@@ -201,12 +197,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  backButton: {
-    fontSize: 24,
-    color: colors.text,
-    paddingHorizontal: ui.padding,
-  },
-  scrollContent: {
+    scrollContent: {
     padding: ui.padding,
     paddingBottom: 100,
   },

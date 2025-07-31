@@ -4,15 +4,18 @@ import AppNavigator from './navigation/AppNavigator';
 import { StatusBar } from 'react-native';
 import { colors } from './constants/colors';
 import { MealProvider } from './context/MealContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 function App() {
   return (
-    <MealProvider>
-      <NavigationContainer>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-        <AppNavigator />
-      </NavigationContainer>
-    </MealProvider>
+    <SafeAreaProvider>
+      <MealProvider>
+        <NavigationContainer>
+          <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+          <AppNavigator />
+        </NavigationContainer>
+      </MealProvider>
+    </SafeAreaProvider>
   );
 }
 
