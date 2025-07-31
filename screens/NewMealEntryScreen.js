@@ -179,7 +179,7 @@ const NewMealEntryScreen = ({ navigation, route }) => {
       (remainingCalories !== null ? `\n\nRemaining daily calories: ${remainingCalories}` : ''),
       [{
         text: 'OK',
-        onPress: () => navigation.navigate('MealTracker')
+        onPress: () => navigation.navigate('MainTabs', { screen: 'Log' })
       }]
     );
   };

@@ -87,6 +87,14 @@ const UserProfileScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const handleViewProgress = () => {
+  navigation.navigate('MainTabs', {screen: 'Dashboard'}); // Replace 'ProgressScreen' with your actual screen name
+};
+
+const handleSetGoals = () => {
+  navigation.navigate('MainTabs', {screen: 'Goals'}); // Replace 'ProgressScreen' with your actual screen name
+};
+
   return (
     <SafeAreaView style={styles.container}>
       <Header 
@@ -470,9 +478,13 @@ const UserProfileScreen = ({ navigation }) => {
           )}
         </View>
 
+        
+
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.quickAction}>
+          <TouchableOpacity style={styles.quickAction}
+          onPress={handleViewProgress}
+          >
             <View style={[styles.quickActionIcon, { backgroundColor: colors.blueLight }]}>
               <Text style={styles.quickActionIconText}>👀</Text>
             </View>
@@ -480,12 +492,15 @@ const UserProfileScreen = ({ navigation }) => {
             <Text style={styles.quickActionSubtitle}>See your journey so far</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.quickAction}>
+          <TouchableOpacity style={styles.quickAction}
+          onPress={handleSetGoals}
+          >
             <View style={[styles.quickActionIcon, { backgroundColor: colors.greenLight }]}>
               <Text style={styles.quickActionIconText}>⚙️</Text>
             </View>
-            <Text style={styles.quickActionTitle}>Set Goals</Text>
+            <Text style={styles.quickActionTitle }>Set Goals</Text>
             <Text style={styles.quickActionSubtitle}>Configure your targets</Text>
+            
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickAction}>
