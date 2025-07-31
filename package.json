@@ -20,6 +20,8 @@
     "@react-navigation/stack": "^7.4.2",
     "expo": "~53.0.20",
     "expo-status-bar": "~2.2.3",
+    "lucide-react": "^0.535.0",
+    "lucide-react-native": "^0.535.0",
     "prop-types": "^15.8.1",
     "react": "19.0.0",
     "react-native": "0.79.5",
