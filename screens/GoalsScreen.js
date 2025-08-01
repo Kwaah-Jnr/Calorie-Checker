@@ -149,7 +149,7 @@ const GoalsScreen = ({ navigation, route }) => {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Current Stats Card */}
+        {/* Current Stats Card Updated to be read-only */}
         <View style={styles.statsCard}>
           <Text style={styles.statsCardTitle}>Your Current Stats</Text>
           
@@ -171,69 +171,26 @@ const GoalsScreen = ({ navigation, route }) => {
           </View>
           
           {/* Quick Edit Controls */}
-          <View style={styles.editRow}>
-            <View style={styles.editInputContainer}>
-              <TextInput
-                style={styles.editInput}
-                value={userStats.currentWeight.toString()}
-                onChangeText={value => setUserStats(prev => ({
-                  ...prev, 
-                  currentWeight: parseFloat(value) || 70
-                }))}
-                keyboardType="numeric"
-                placeholder="Weight (kg)"
-                placeholderTextColor={colors.whiteOpacity70}
-              />
+           <View style={styles.readOnlyStats}>
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Age:</Text>
+              <Text style={styles.statValue}>{userStats.age}</Text>
             </View>
-            
-            <View style={styles.editInputContainer}>
-              <TextInput
-                style={styles.editInput}
-                value={userStats.age.toString()}
-                onChangeText={value => setUserStats(prev => ({
-                  ...prev, 
-                  age: parseInt(value) || 30
-                }))}
-                keyboardType="numeric"
-                placeholder="Age"
-                placeholderTextColor={colors.whiteOpacity70}
-              />
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Height:</Text>
+              <Text style={styles.statValue}>{userStats.height} cm</Text>
             </View>
-            
-            <View style={styles.editInputContainer}>
-              <View style={styles.genderButtons}>
-                <TouchableOpacity
-                  style={[
-                    styles.genderButton, 
-                    userStats.gender === 'male' && styles.activeGender
-                  ]}
-                  onPress={() => setUserStats(prev => ({...prev, gender: 'male'}))}
-                >
-                  <Text style={[
-                    styles.genderText,
-                    userStats.gender === 'male' && styles.activeGenderText
-                  ]}>
-                    Male
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[
-                    styles.genderButton, 
-                    userStats.gender === 'female' && styles.activeGender
-                  ]}
-                  onPress={() => setUserStats(prev => ({...prev, gender: 'female'}))}
-                >
-                  <Text style={[
-                    styles.genderText,
-                    userStats.gender === 'female' && styles.activeGenderText
-                  ]}>
-                    Female
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Gender:</Text>
+              <Text style={styles.statValue}>
+                {userStats.gender === 'male' ? 'Male' : 'Female'}
+              </Text>
             </View>
           </View>
+          
+          <Text style={styles.noteText}>
+            Note: Update these values in your Profile screen
+          </Text>
         </View>
 
         {/* Activity Level */}
