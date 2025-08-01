@@ -24,19 +24,34 @@ const MealTrackerScreen = ({ navigation }) => {
   const mealContext = useContext(MealContext);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Handle case where context might be null/undefined
+  // Get meals and goals from context with proper error handling
   const meals = mealContext?.meals || [];
-  const goals = mealContext?.goals || {};
+  const goals = mealContext?.goals || {
+    dailyCalories: 2000,
+    dailyMealGoal: 3,
+    targetWeight: 0,
+    selectedGoal: 'maintain'
+  };
+
+  // Calculate today's meals
+  const getTodaysMeals = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return meals.filter(meal => {
+      if (!meal?.dateLogged) return false;
+      return meal.dateLogged.split('T')[0] === today;
+    });
+  };
+
+  const todaysMeals = getTodaysMeals();
+  const totalMealsLogged = todaysMeals.length;
   
-  const totalMealsLogged = meals.length;
-  
-  // Calculate daily progress based on goals
-  const dailyMealGoal = goals?.dailyMealGoal || 6;
+  // Calculate progress based on goals
+  const dailyMealGoal = goals?.dailyMealGoal || 3;
   const progressPercentage = Math.min(100, Math.round((totalMealsLogged / dailyMealGoal) * 100));
   
-  // Calculate calorie consumption with proper error handling
+  // Calculate calorie consumption
   const calculateTotalCalories = () => {
-    return meals.reduce((total, meal) => {
+    return todaysMeals.reduce((total, meal) => {
       if (!meal || !meal.foods) return total;
       return total + meal.foods.reduce((mealTotal, food) => {
         return mealTotal + (food?.calories || 0);
@@ -45,18 +60,11 @@ const MealTrackerScreen = ({ navigation }) => {
   };
 
   const totalCaloriesConsumed = calculateTotalCalories();
-  const remainingCalories = goals?.dailyCalories ? goals.dailyCalories - totalCaloriesConsumed : 0;
+  const dailyCalorieGoal = goals?.dailyCalories || 2000;
+  const remainingCalories = Math.max(0, dailyCalorieGoal - totalCaloriesConsumed);
+  const caloriePercentage = Math.min(100, Math.round((totalCaloriesConsumed / dailyCalorieGoal) * 100));
 
-  const getTodaysMeals = () => {
-    const today = new Date().toISOString().split('T')[0];
-    return meals.filter(meal => {
-      if (!meal?.dateLogged) return false;
-      return meal.dateLogged.split('T')[0] === today;
-    });
-
-  };
-
-  const todaysMeals = getTodaysMeals();
+  // Group meals by type
   const mealsByType = todaysMeals.reduce((acc, meal) => {
     const mealType = meal?.mealType || 'Other';
     if (!acc[mealType]) {
@@ -66,16 +74,13 @@ const MealTrackerScreen = ({ navigation }) => {
     return acc;
   }, {});
 
+  // Navigation handlers
   const navigateToGoals = () => {
-    if (navigation?.navigate) {
-      navigation.navigate('Goals');
-    }
+    navigation?.navigate('Goals');
   };
 
   const handleNewMealEntry = (prefillData = null) => {
-    if (navigation?.navigate) {
-      navigation.navigate('NewMealEntry', prefillData ? { prefillData } : undefined);
-    }
+    navigation?.navigate('NewMealEntry', prefillData ? { prefillData } : undefined);
   };
 
   const handleEditMeal = (meal) => {
@@ -207,17 +212,22 @@ const MealTrackerScreen = ({ navigation }) => {
         <Card style={styles.progressCard}>
           <View style={styles.progressHeader}>
             <Text style={styles.progressText}>Today's Progress</Text>
-            {goals?.dailyCalories && (
-              <Text style={styles.calorieGoal}>
-                Goal: {goals.dailyCalories} cal • Remaining: {Math.max(0, remainingCalories)} cal
-              </Text>
-            )}
+            <Text style={styles.calorieGoal}>
+              Goal: {dailyCalorieGoal} cal • Remaining: {remainingCalories} cal
+            </Text>
           </View>
           <Text style={styles.progressSubtext}>
             You've logged {totalMealsLogged} meals ({totalCaloriesConsumed} cal)
           </Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressLabel}>Meals: {totalMealsLogged}/{dailyMealGoal}</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
+            </View>
+            <Text style={styles.progressLabel}>Calories: {totalCaloriesConsumed}/{dailyCalorieGoal}</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.calorieProgressFill, { width: `${caloriePercentage}%` }]} />
+            </View>
           </View>
           <Text style={styles.tapToLog}>Tap to log another meal</Text>
         </Card>
@@ -346,6 +356,19 @@ const styles = StyleSheet.create({
     fontWeight: '600', 
     color: colors.text,
     fontSize: 16
+  },
+  progressContainer: {
+    marginVertical: 12,
+  },
+  progressLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  calorieProgressFill: {
+    height: '100%',
+    backgroundColor: colors.secondary,
+    borderRadius: 3,
   },
   calorieGoal: {
     fontSize: 12,
