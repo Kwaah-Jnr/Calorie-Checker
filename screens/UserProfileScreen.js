@@ -70,6 +70,45 @@ const UserProfileScreen = ({ navigation }) => {
     Alert.alert('Success', 'Profile saved successfully!');
   };
 
+  const calculateBMR = (weight, height, age, gender) => {
+    if (gender === 'male') {
+      return Math.round(88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age));
+    } else {
+      return Math.round(447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age));
+    }
+  };
+
+  const calculateTDEE = (bmr, activityLevel) => {
+    return Math.round(bmr * activityLevel);
+  };
+
+  const handleSetGoals = () => {
+    // Calculate BMR and TDEE based on updated profile
+    const bmr = calculateBMR(
+      profile.weight,
+      profile.height,
+      profile.age,
+      profile.gender
+    );
+    const tdee = calculateTDEE(bmr, 1.55); // Assuming moderate activity level
+
+    // Navigate to Goals screen with updated stats
+    navigation.navigate('Goals', { 
+      updatedStats: {
+        currentWeight: profile.weight,
+        height: profile.height,
+        age: profile.age,
+        gender: profile.gender,
+        bmr,
+        tdee
+      }
+    });
+  };
+
+  const handleViewProgress = () => {
+    navigation.navigate('MainTabs', {screen: 'Dashboard'});
+  };
+
   const TabButton = ({ id, label }) => (
     <TouchableOpacity
       onPress={() => setActiveTab(id)}
@@ -86,14 +125,6 @@ const UserProfileScreen = ({ navigation }) => {
       </Text>
     </TouchableOpacity>
   );
-
-  const handleViewProgress = () => {
-  navigation.navigate('MainTabs', {screen: 'Dashboard'}); // Replace 'ProgressScreen' with your actual screen name
-};
-
-const handleSetGoals = () => {
-  navigation.navigate('MainTabs', {screen: 'Goals'}); // Replace 'ProgressScreen' with your actual screen name
-};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -478,13 +509,9 @@ const handleSetGoals = () => {
           )}
         </View>
 
-        
-
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.quickAction}
-          onPress={handleViewProgress}
-          >
+          <TouchableOpacity style={styles.quickAction} onPress={handleViewProgress}>
             <View style={[styles.quickActionIcon, { backgroundColor: colors.blueLight }]}>
               <Text style={styles.quickActionIconText}>👀</Text>
             </View>
@@ -492,15 +519,12 @@ const handleSetGoals = () => {
             <Text style={styles.quickActionSubtitle}>See your journey so far</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.quickAction}
-          onPress={handleSetGoals}
-          >
+          <TouchableOpacity style={styles.quickAction} onPress={handleSetGoals}>
             <View style={[styles.quickActionIcon, { backgroundColor: colors.greenLight }]}>
               <Text style={styles.quickActionIconText}>⚙️</Text>
             </View>
-            <Text style={styles.quickActionTitle }>Set Goals</Text>
+            <Text style={styles.quickActionTitle}>Set Goals</Text>
             <Text style={styles.quickActionSubtitle}>Configure your targets</Text>
-            
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickAction}>

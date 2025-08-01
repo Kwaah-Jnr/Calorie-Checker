@@ -13,15 +13,18 @@ import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
 import Header from '../components/Header';
 
-const GoalsScreen = ({ navigation }) => {
-  // User stats with BMR and TDEE calculations
+const GoalsScreen = ({ navigation, route }) => {
+  // Get updated stats from navigation paramsif they exist
+  const incomingStats = route.params?.updatedStats;
+
+  // Use stats with BMR and TDEE calculations
   const [userStats, setUserStats] = useState({
-    bmr: 1800,
-    tdee: 2200,
-    currentWeight: 70,
-    height: 175,
-    age: 30,
-    gender: 'male'
+   bmr: incomingStats?.bmr || 1800,
+    tdee: incomingStats?.tdee || 2200,
+    currentWeight: incomingStats?.currentWeight || 70,
+    height: incomingStats?.height || 175,
+    age: incomingStats?.age || 30,
+    gender: incomingStats?.gender || 'male'
   });
 
   const [goalTypes, setGoalTypes] = useState([]);
@@ -47,21 +50,18 @@ const GoalsScreen = ({ navigation }) => {
   };
 
   // Update calculations when stats change
-  useEffect(() => {
-    const newBMR = calculateBMR(
-      userStats.currentWeight,
-      userStats.height,
-      userStats.age,
-      userStats.gender
-    );
-    const newTDEE = calculateTDEE(newBMR, activityLevel);
-    
-    setUserStats(prev => ({
-      ...prev,
-      bmr: newBMR,
-      tdee: newTDEE
-    }));
-  }, [userStats.currentWeight, userStats.height, userStats.age, userStats.gender, activityLevel]);
+   useEffect(() => {
+    if (incomingStats) {
+      setUserStats({
+        bmr: incomingStats.bmr,
+        tdee: incomingStats.tdee,
+        currentWeight: incomingStats.currentWeight,
+        height: incomingStats.height,
+        age: incomingStats.age,
+        gender: incomingStats.gender
+      });
+    }
+  }, [incomingStats]);
 
   // Update goal types when TDEE changes
   useEffect(() => {
@@ -801,7 +801,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: 'bold',
     fontSize: 16,
-    
+
   },
 });
 
