@@ -184,6 +184,25 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     );
   };
 
+  const fetchCaloriesFromAPI = async (foodName, index) => {
+  if (!foodName) return;
+
+  try {
+    const res = await fetch(`http://192.168.137.136:5000/search?q=${encodeURIComponent(foodName)}`);
+    const data = await res.json();
+
+    if (data.length > 0 && data[0].calories) {
+      const newEntries = [...foodEntries];
+      newEntries[index].calories = data[0].calories.toString();
+      setFoodEntries(newEntries);
+    } else {
+      console.warn(`No calorie data found for ${foodName}`);
+    }
+  } catch (error) {
+    console.error("Error fetching calories:", error);
+  }
+};
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
