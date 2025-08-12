@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,33 +12,24 @@ import {
 import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
 import Header from '../components/Header';
+import { MealContext } from '../context/MealContext';
 
 const UserProfileScreen = ({ navigation }) => {
-  const [profile, setProfile] = useState({
-    name: 'Kofi Adu',
-    email: 'Kofi.adu@gmail.com',
-    age: 20,
+  const { userProfile, updateProfile, goals } = useContext(MealContext);
+  
+  const [profile, setProfile] = useState(userProfile || {
+    name: 'New User',
+    email: '',
+    age: 25,
     gender: 'male',
-    height: 165,
-    weight: 55,
-    // Preferences and settings
-    units: 'metric',
-    theme: 'light',
-    notifications: true,
-    trackingReminders: true,
-    weeklyGoals: true,
-    dataSharing: false,
-    // Personal preferences
-    dietaryRestrictions: [],
-    allergies: [],
-    fitnessLevel: 'intermediate',
-    preferredWorkoutTime: 'morning'
+    height: 175,
+    weight: 70,
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
 
-  const updateProfile = (field, value) => {
+  const updateProfileField = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
@@ -54,20 +45,16 @@ const UserProfileScreen = ({ navigation }) => {
     if (bmi < 30) return { category: 'Overweight', color: colors.yellow, bg: colors.yellowLight };
     return { category: 'Obese', color: colors.error, bg: colors.errorLight };
   };
-
-  const dietaryOptions = [
-    'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 
-    'Keto', 'Paleo', 'Low-Carb', 'Mediterranean'
-  ];
-
-  const allergyOptions = [
-    'Nuts', 'Dairy', 'Eggs', 'Soy', 
-    'Gluten', 'Shellfish', 'Fish', 'Sesame'
-  ];
-
-  const handleSave = () => {
+  
+    const handleSave = () => {
+    updateProfile(profile);
     setIsEditing(false);
     Alert.alert('Success', 'Profile saved successfully!');
+    navigation.navigate({
+      name: 'MealTracker',
+      params: { updatedName: profile.name },
+      merge: true,
+    });
   };
 
   const calculateBMR = (weight, height, age, gender) => {
@@ -83,17 +70,15 @@ const UserProfileScreen = ({ navigation }) => {
   };
 
   const handleSetGoals = () => {
-    // Calculate BMR and TDEE based on updated profile
+
     const bmr = calculateBMR(
       profile.weight,
       profile.height,
       profile.age,
       profile.gender
     );
-    const tdee = calculateTDEE(bmr, 1.55); // Assuming moderate activity level
-
-    // Navigate to Goals screen with updated stats
-    navigation.navigate('Goals', { 
+    const tdee = calculateTDEE(bmr, goals?.activityLevel || 1.55);
+        navigation.navigate('Goals', { 
       updatedStats: {
         currentWeight: profile.weight,
         height: profile.height,
@@ -101,9 +86,11 @@ const UserProfileScreen = ({ navigation }) => {
         gender: profile.gender,
         bmr,
         tdee
-      }
+      },
+      updateGoals: navigation.getParam('updateGoals') // Pass through if needed
     });
   };
+  
 
   const handleViewProgress = () => {
     navigation.navigate('MainTabs', {screen: 'Dashboard'});
@@ -196,8 +183,7 @@ const UserProfileScreen = ({ navigation }) => {
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
           <TabButton id="personal" label="Personal Info" />
-          <TabButton id="preferences" label="Preferences" />
-          <TabButton id="health" label="Health & Diet" />
+
         </View>
 
         {/* Tab Content */}
@@ -320,193 +306,7 @@ const UserProfileScreen = ({ navigation }) => {
               </View>
             </View>
           )}
-
-          {activeTab === 'preferences' && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>App Preferences</Text>
-              
-              <View style={styles.inputRow}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Units</Text>
-                  <View style={[
-                    styles.input,
-                    !isEditing && styles.disabledInput
-                  ]}>
-                    <Text>{profile.units === 'metric' ? 'Metric (kg, cm)' : 'Imperial (lbs, inches)'}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Preferred Workout Time</Text>
-                  <View style={[
-                    styles.input,
-                    !isEditing && styles.disabledInput
-                  ]}>
-                    <Text>
-                      {profile.preferredWorkoutTime === 'morning' ? 'Morning' : 
-                       profile.preferredWorkoutTime === 'afternoon' ? 'Afternoon' : 
-                       profile.preferredWorkoutTime === 'evening' ? 'Evening' : 'Flexible'}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <Text style={styles.subsectionTitle}>Notification Settings</Text>
-              
-              <View style={styles.toggleContainer}>
-                <Text style={styles.toggleLabel}>Push Notifications</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.toggle,
-                    profile.notifications ? styles.toggleOn : styles.toggleOff,
-                    !isEditing && styles.toggleDisabled
-                  ]}
-                  onPress={() => updateProfile('notifications', !profile.notifications)}
-                  disabled={!isEditing}
-                >
-                  <View style={[
-                    styles.toggleKnob,
-                    profile.notifications ? styles.toggleKnobOn : styles.toggleKnobOff
-                  ]} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.toggleContainer}>
-                <Text style={styles.toggleLabel}>Daily Tracking Reminders</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.toggle,
-                    profile.trackingReminders ? styles.toggleOn : styles.toggleOff,
-                    !isEditing && styles.toggleDisabled
-                  ]}
-                  onPress={() => updateProfile('trackingReminders', !profile.trackingReminders)}
-                  disabled={!isEditing}
-                >
-                  <View style={[
-                    styles.toggleKnob,
-                    profile.trackingReminders ? styles.toggleKnobOn : styles.toggleKnobOff
-                  ]} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.toggleContainer}>
-                <Text style={styles.toggleLabel}>Weekly Goal Updates</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.toggle,
-                    profile.weeklyGoals ? styles.toggleOn : styles.toggleOff,
-                    !isEditing && styles.toggleDisabled
-                  ]}
-                  onPress={() => updateProfile('weeklyGoals', !profile.weeklyGoals)}
-                  disabled={!isEditing}
-                >
-                  <View style={[
-                    styles.toggleKnob,
-                    profile.weeklyGoals ? styles.toggleKnobOn : styles.toggleKnobOff
-                  ]} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.toggleContainer}>
-                <Text style={styles.toggleLabel}>Anonymous Data Sharing</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.toggle,
-                    profile.dataSharing ? styles.toggleOn : styles.toggleOff,
-                    !isEditing && styles.toggleDisabled
-                  ]}
-                  onPress={() => updateProfile('dataSharing', !profile.dataSharing)}
-                  disabled={!isEditing}
-                >
-                  <View style={[
-                    styles.toggleKnob,
-                    profile.dataSharing ? styles.toggleKnobOn : styles.toggleKnobOff
-                  ]} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {activeTab === 'health' && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Health & Dietary Information</Text>
-              
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Fitness Level</Text>
-                <View style={[
-                  styles.input,
-                  !isEditing && styles.disabledInput
-                ]}>
-                  <Text>
-                    {profile.fitnessLevel === 'beginner' ? 'Beginner' : 
-                     profile.fitnessLevel === 'intermediate' ? 'Intermediate' : 'Advanced'}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.subsectionTitle}>Dietary Restrictions</Text>
-              <View style={styles.checkboxGrid}>
-                {dietaryOptions.map(option => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.checkboxOption,
-                      profile.dietaryRestrictions.includes(option) && styles.checkboxOptionSelected,
-                      !isEditing && styles.checkboxOptionDisabled
-                    ]}
-                    onPress={() => {
-                      if (profile.dietaryRestrictions.includes(option)) {
-                        updateProfile('dietaryRestrictions', 
-                          profile.dietaryRestrictions.filter(d => d !== option));
-                      } else {
-                        updateProfile('dietaryRestrictions', 
-                          [...profile.dietaryRestrictions, option]);
-                      }
-                    }}
-                    disabled={!isEditing}
-                  >
-                    <Text style={[
-                      styles.checkboxOptionText,
-                      profile.dietaryRestrictions.includes(option) && styles.checkboxOptionTextSelected
-                    ]}>
-                      {option}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.subsectionTitle}>Allergies</Text>
-              <View style={styles.checkboxGrid}>
-                {allergyOptions.map(option => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.checkboxOption,
-                      profile.allergies.includes(option) && styles.checkboxOptionSelected,
-                      !isEditing && styles.checkboxOptionDisabled
-                    ]}
-                    onPress={() => {
-                      if (profile.allergies.includes(option)) {
-                        updateProfile('allergies', 
-                          profile.allergies.filter(a => a !== option));
-                      } else {
-                        updateProfile('allergies', 
-                          [...profile.allergies, option]);
-                      }
-                    }}
-                    disabled={!isEditing}
-                  >
-                    <Text style={[
-                      styles.checkboxOptionText,
-                      profile.allergies.includes(option) && styles.checkboxOptionTextSelected
-                    ]}>
-                      {option}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
+          
         </View>
 
         {/* Quick Actions */}
@@ -527,13 +327,7 @@ const UserProfileScreen = ({ navigation }) => {
             <Text style={styles.quickActionSubtitle}>Configure your targets</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.quickAction}>
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.purpleLight }]}>
-              <Text style={styles.quickActionIconText}>❤️</Text>
-            </View>
-            <Text style={styles.quickActionTitle}>Health Insights</Text>
-            <Text style={styles.quickActionSubtitle}>Personalized recommendations</Text>
-          </TouchableOpacity>
+
         </View>
       </ScrollView>
 
@@ -838,7 +632,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   quickAction: {
-    width: '31%',
+    width: '48%',
     backgroundColor: colors.white,
     borderRadius: ui.borderRadius,
     padding: 16,

@@ -19,7 +19,7 @@ import { MealContext } from '../context/MealContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const NewMealEntryScreen = ({ navigation, route }) => {
-  const { addMeal, goals } = useContext(MealContext);
+  const { addMeal, goals, quickFoods = [] } = useContext(MealContext);
   const prefillData = route.params?.prefillData || null;
   
   // Food entries state with calorie tracking
@@ -114,14 +114,7 @@ const NewMealEntryScreen = ({ navigation, route }) => {
       setFoodEntries(newEntries);
     }
   };
-
-  // Quick add foods with calorie data
-  const quickFoods = [
-    { emoji: '☕', name: 'Coffee', calories: 2, unit: 'cup' },
-    { emoji: '🍎', name: 'Apple', calories: 95, unit: 'medium' },
-    { emoji: '🍗', name: 'Chicken Breast', calories: 165, unit: '100g' },
-    { emoji: '🍚', name: 'White Rice', calories: 130, unit: '100g' }
-  ];
+  
 
   // Get calorie info for common foods
   const getCalorieInfo = (foodName) => {
@@ -142,8 +135,10 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     }, 0);
   };
 
+  const [searchQuery, setSearchQuery] = useState('');
   // Main log handler
   const handleLogMeal = () => {
+    
     const isInvalid = foodEntries.some(
       entry => !entry.name.trim() || !entry.quantity.trim()
     );
@@ -269,12 +264,26 @@ const NewMealEntryScreen = ({ navigation, route }) => {
         {/* Meal Title */}
         <Text style={styles.mealNameTitle}>{mealName}</Text>
 
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <TextInput
+
+            placeholder="Search meals..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.searchInput}
+          />
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterIcon}>≡</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Food Entries List */}
         {foodEntries.map((item, index) => (
           <View key={index} style={styles.foodEntryContainer}>
             <View style={styles.foodEntryHeader}>
               <TextInput
-                placeholder="Food name (e.g., Avocado Toast)"
+                placeholder="Food name ( if not in search meals)"
                 value={item.name}
                 onChangeText={(text) => handleUpdateEntry(index, 'name', text)}
                 style={styles.foodNameInput}
@@ -472,6 +481,33 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 20,
     textAlign: 'center',
+  },
+  searchContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 24 
+  },
+  searchInput: { 
+    flex: 1, 
+    marginRight: 12,
+    backgroundColor: colors.grayLight,
+    borderRadius: ui.borderRadius,
+    paddingHorizontal: 16,
+    height: 48
+  },
+  filterButton: { 
+    backgroundColor: colors.primary, 
+    padding: 12, 
+    borderRadius: ui.borderRadius,
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  filterIcon: { 
+    color: colors.white, 
+    fontSize: 16, 
+    fontWeight: 'bold' 
   },
   foodEntryContainer: {
     marginBottom: 20,

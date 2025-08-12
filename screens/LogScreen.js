@@ -1,11 +1,22 @@
 import React, { useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Header } from '../components';
 import { colors } from '../constants/colors';
 import { MealContext } from '../context/MealContext';
 
 const LogScreen = ({ navigation }) => {
   const { meals, deleteMeal } = useContext(MealContext);
+
+  const handleDelete = (mealId) => {
+  Alert.alert(
+    'Delete Meal',
+    'Are you sure you want to delete this meal?',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', onPress: () => deleteMeal(mealId), style: 'destructive' }
+    ]
+  );
+};
 
   const renderMealItem = ({ item }) => (
     <View style={styles.mealCard}>
@@ -14,7 +25,7 @@ const LogScreen = ({ navigation }) => {
         <Text style={styles.mealTime}>{item.time}</Text>
         <TouchableOpacity 
           style={styles.deleteButton}
-          onPress={() => deleteMeal(item.id)}
+          onPress={() => handleDelete(item.id)}
         >
           <Text style={styles.deleteText}>×</Text>
         </TouchableOpacity>
