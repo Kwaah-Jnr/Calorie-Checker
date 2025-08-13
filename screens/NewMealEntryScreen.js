@@ -19,7 +19,7 @@ import { MealContext } from '../context/MealContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const NewMealEntryScreen = ({ navigation, route }) => {
-  const { addMeal, goals } = useContext(MealContext);
+  const { addMeal, goals, quickFoods = [] } = useContext(MealContext);
   const prefillData = route.params?.prefillData || null;
   
   // Food entries state with calorie tracking
@@ -114,14 +114,7 @@ const NewMealEntryScreen = ({ navigation, route }) => {
       setFoodEntries(newEntries);
     }
   };
-
-  // Quick add foods with calorie data
-  const quickFoods = [
-    { emoji: '☕', name: 'Coffee', calories: 2, unit: 'cup' },
-    { emoji: '🍎', name: 'Apple', calories: 95, unit: 'medium' },
-    { emoji: '🍗', name: 'Chicken Breast', calories: 165, unit: '100g' },
-    { emoji: '🍚', name: 'White Rice', calories: 130, unit: '100g' }
-  ];
+  
 
   // Get calorie info for common foods
   const getCalorieInfo = (foodName) => {

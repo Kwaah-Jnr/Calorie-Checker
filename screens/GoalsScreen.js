@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,28 +12,29 @@ import {
 import { colors } from '../constants/colors';
 import { ui } from '../constants/ui';
 import Header from '../components/Header';
+import { MealContext } from '../context/MealContext';
 
 const GoalsScreen = ({ navigation, route }) => {
-  // Get updated stats from navigation paramsif they exist
+  const { goals, updateGoals } = useContext(MealContext);
   const incomingStats = route.params?.updatedStats;
 
-  // Use stats with BMR and TDEE calculations
-  const [userStats, setUserStats] = useState({
-   bmr: incomingStats?.bmr || 1800,
-    tdee: incomingStats?.tdee || 2200,
-    currentWeight: incomingStats?.currentWeight || 70,
-    height: incomingStats?.height || 175,
-    age: incomingStats?.age || 30,
-    gender: incomingStats?.gender || 'male'
-  });
-
-  const [goalTypes, setGoalTypes] = useState([]);
-  const [selectedGoal, setSelectedGoal] = useState('maintain');
-  const [customCalories, setCustomCalories] = useState('2200');
+  // Initialize with context goals or defaults
+  const [selectedGoal, setSelectedGoal] = useState(goals?.selectedGoal || 'maintain');
+  const [customCalories, setCustomCalories] = useState(goals?.dailyCalories?.toString() || '2200');
   const [isCustomMode, setIsCustomMode] = useState(false);
-  const [targetWeight, setTargetWeight] = useState('65');
+  const [targetWeight, setTargetWeight] = useState(goals?.targetWeight?.toString() || '70');
   const [timeframe, setTimeframe] = useState('12');
-  const [activityLevel, setActivityLevel] = useState(1.55);
+  const [activityLevel, setActivityLevel] = useState(goals?.activityLevel || 1.55);
+  const [goalTypes, setGoalTypes] = useState([]);
+
+  const [userStats, setUserStats] = useState({
+    bmr: incomingStats?.bmr || goals?.bmr || 1800,
+    tdee: incomingStats?.tdee || goals?.tdee || 2200,
+    currentWeight: incomingStats?.currentWeight || goals?.currentWeight || 70,
+    height: incomingStats?.height || goals?.height || 175,
+    age: incomingStats?.age || goals?.age || 30,
+    gender: incomingStats?.gender || goals?.gender || 'male'
+  });
 
   // Calculate BMR
   const calculateBMR = (weight, height, age, gender) => {
@@ -129,10 +130,26 @@ const GoalsScreen = ({ navigation, route }) => {
     { value: 1.9, label: 'Extremely Active (2x/day)' }
   ];
 
-  const handleSaveGoals = () => {
+   const handleSaveGoals = () => {
+    const newGoals = {
+      dailyCalories: isCustomMode ? parseInt(customCalories) : (goalTypes.find(g => g.id === selectedGoal)?.calories || userStats.tdee),
+      dailyMealGoal: 3, // You can make this configurable if needed
+      targetWeight: parseFloat(targetWeight),
+      selectedGoal,
+      activityLevel,
+      bmr: userStats.bmr,
+      tdee: userStats.tdee,
+      currentWeight: userStats.currentWeight,
+      height: userStats.height,
+      age: userStats.age,
+      gender: userStats.gender
+    };
+
+    updateGoals(newGoals);
+    
     Alert.alert(
       'Goals Set Successfully!',
-      `Daily Calorie Target: ${dailyCalories.toLocaleString()} calories\n` +
+      `Daily Calorie Target: ${newGoals.dailyCalories.toLocaleString()} calories\n` +
       `Estimated time to goal: ${estimatedTimeToGoal} weeks\n` +
       `Weekly change: ${selectedGoal.includes('lose') ? '-' : selectedGoal.includes('gain') ? '+' : ''}${estimatedWeightChangePerWeek.toFixed(2)} kg`,
       [

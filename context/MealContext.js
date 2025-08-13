@@ -1,22 +1,69 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { 
+  defaultUser, 
+  defaultGoals, 
+  defaultMeals,
+  defaultQuickFoods,
+  defaultCategories,
+  defaultPopularMeals
+} from '../constants/defaultData';
 
 export const MealContext = createContext();
 
 export const MealProvider = ({ children }) => {
-  const [meals, setMeals] = useState([]);
-  const [userProfile, setUserProfile] = useState(null);
-  const [goals, setGoals] = useState(null);
+  // Initialize state with defaults
+  const [state, setState] = useState({
+    meals: defaultMeals,
+    userProfile: defaultUser,
+    goals: defaultGoals,
+    quickFoods: defaultQuickFoods,
+    categories: defaultCategories,
+    popularMeals: defaultPopularMeals
+  });
+
+  const setUserName = (newName) => {
+    setState(prev => ({
+      ...prev,
+      userProfile: {
+        ...prev.userProfile,
+        name: newName
+      }
+    }));
+  };
+   
+  return (
+    <MealContext.Provider value={{ 
+      ...state,
+      setUserName,
+      setState,
+      deleteMeal: (mealId) => {
+        setState(prev => ({
+          ...prev,
+          meals: prev.meals.filter(meal => meal.id !== mealId)
+        }));
+      },
+    }}>
+      {children}
+    </MealContext.Provider>
+  );
 
   // Load data from storage on startup
   useEffect(() => {
     const loadData = async () => {
       try {
-        const storedMeals = await AsyncStorage.getItem('@meals');
-        if (storedMeals) setMeals(JSON.parse(storedMeals));
+        const storedData = await AsyncStorage.getItem('@app_data');
         
-        const storedProfile = await AsyncStorage.getItem('@user_profile');
-        if (storedProfile) setUserProfile(JSON.parse(storedProfile));
+        if (storedData) {
+          const parsedData = JSON.parse(storedData);
+          setState(prev => ({
+            ...prev,
+            meals: parsedData.meals || defaultMeals,
+            userProfile: parsedData.userProfile || defaultUser,
+            goals: parsedData.goals || defaultGoals,
+            // Keep the other defaults if not in storage
+          }));
+        }
       } catch (e) {
         console.error('Failed to load data', e);
       }
@@ -28,53 +75,65 @@ export const MealProvider = ({ children }) => {
   useEffect(() => {
     const saveData = async () => {
       try {
-        await AsyncStorage.setItem('@meals', JSON.stringify(meals));
-        if (userProfile) {
-          await AsyncStorage.setItem('@user_profile', JSON.stringify(userProfile));
-        }
+        // Only save what needs persistence
+        await AsyncStorage.setItem('@app_data', JSON.stringify({
+          meals: state.meals,
+          userProfile: state.userProfile,
+          goals: state.goals
+        }));
       } catch (e) {
         console.error('Failed to save data', e);
       }
     };
     saveData();
-  }, [meals, userProfile]);
+  }, [state.meals, state.userProfile, state.goals]);
 
+  // Helper function to update state
+  const updateState = (key, value) => {
+    setState(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Meal functions
   const addMeal = (newMeal) => {
-    setMeals(prev => [newMeal, ...prev]); // Newest meals first
+    updateState('meals', [newMeal, ...state.meals]);
   };
 
   const deleteMeal = (mealId) => {
-    setMeals(prev => prev.filter(meal => meal.id !== mealId));
+    updateState('meals', state.meals.filter(meal => meal.id !== mealId));
   };
 
   const updateMeal = (updatedMeal) => {
-    setMeals(prev => prev.map(meal => 
+    updateState('meals', state.meals.map(meal => 
       meal.id === updatedMeal.id ? updatedMeal : meal
     ));
   };
 
   const getTodaysMeals = () => {
     const today = new Date().toISOString().split('T')[0];
-    return meals.filter(meal => 
+    return state.meals.filter(meal => 
       meal.dateLogged && meal.dateLogged.split('T')[0] === today
     );
   };
 
+  // Profile functions
   const updateProfile = (profileData) => {
-    setUserProfile(profileData);
+    updateState('userProfile', profileData);
+  };
+
+  // Goals functions
+  const updateGoals = (goalsData) => {
+    updateState('goals', goalsData);
   };
 
   return (
     <MealContext.Provider value={{ 
-      meals,
-      userProfile,
+      ...state,
       addMeal,
       deleteMeal,
       updateMeal,
       getTodaysMeals,
-      goals,
-      setGoals,
-      updateProfile
+      updateProfile,
+      updateGoals
     }}>
       {children}
     </MealContext.Provider>

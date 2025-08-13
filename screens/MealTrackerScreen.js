@@ -126,21 +126,19 @@ const MealTrackerScreen = ({ navigation }) => {
 
   const renderPopularMealItem = ({ item }) => {
     if (!item) return null;
+    const handlePremiumPrompt = () => {
+    Alert.alert(
+      'Premium Feature',
+      'Access to popular meals is available for premium users only. Upgrade to unlock curated meals and chef recommendations.',
+      [{ text: 'OK', style: 'default' }]
+    );
+  };
     
     return (
       <TouchableOpacity 
-        style={styles.popularMealCard}
-        onPress={() => {
-          handleNewMealEntry({
-            foods: [{ 
-              name: item.name || 'Unknown meal', 
-              quantity: '1', 
-              unit: 'serving',
-              calories: item.calories || 0
-            }]
-          });
-        }}
-      >
+      style={styles.popularMealCard}
+      onPress={handlePremiumPrompt}
+    >
         <ImageBackground 
           source={item.image} 
           style={styles.popularMealImage}
@@ -157,7 +155,7 @@ const MealTrackerScreen = ({ navigation }) => {
         </ImageBackground>
         <View style={styles.popularMealDetails}>
           <Text style={styles.popularMealName}>{item.name || 'Unknown meal'}</Text>
-          <Text style={styles.popularMealCalories}>{item.calories || 0} cal</Text>
+          <Text style={styles.popularMealCalories}>{item.calories || 134} cal</Text>
           <Text style={styles.popularMealChef}>{item.chef || 'Unknown chef'}</Text>
         </View>
       </TouchableOpacity>
@@ -207,15 +205,19 @@ const MealTrackerScreen = ({ navigation }) => {
           <Text style={styles.username}>Calorie Tracker User</Text>
         </View>
       </View>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={[styles.scrollContainer, {paddingBottom: 16}]}
+      >
 
       <TouchableOpacity onPress={() => handleNewMealEntry()}>
         <Card style={styles.progressCard}>
           <View style={styles.progressHeader}>
             <Text style={styles.progressText}>Today's Progress</Text>
-            <Text style={styles.calorieGoal}>
-              Goal: {dailyCalorieGoal} cal • Remaining: {remainingCalories} cal
-            </Text>
           </View>
+            <Text style={styles.calorieGoal}>Goal: {dailyCalorieGoal} cal • Remaining: {remainingCalories} cal
+            </Text>
+
           <Text style={styles.progressSubtext}>
             You've logged {totalMealsLogged} meals ({totalCaloriesConsumed} cal)
           </Text>
@@ -233,11 +235,8 @@ const MealTrackerScreen = ({ navigation }) => {
         </Card>
       </TouchableOpacity>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
-        contentContainerStyle={[styles.scrollContainer, {paddingBottom: 16}]}
-      >
-        {/* Today's Meals */}
+
+        {/* Today's Meals
         {Object.keys(mealsByType).length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Today's Meals</Text>
@@ -252,7 +251,7 @@ const MealTrackerScreen = ({ navigation }) => {
               style={styles.emptyStateButton}
             />
           </View>
-        )}
+        )} */}
 
         {/* Search and Filter */}
         <View style={styles.searchContainer}>
@@ -294,15 +293,7 @@ const MealTrackerScreen = ({ navigation }) => {
         )}
       </ScrollView>
 
-      {/* {bottomNavItems && bottomNavItems.length > 0 && (
-        <BottomNavigation
-          items={bottomNavItems.map(item => ({
-            ...item,
-            onPress: () => handleBottomNavPress(item)
-          }))}
-          activeItem="MealTracker"
-        />
-      )} */}
+
     </SafeAreaView>
   );
 };
@@ -606,4 +597,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MealTrackerScreen;
+export default MealTrackerScreen; 
