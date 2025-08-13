@@ -21,17 +21,38 @@ import { Button, Card, Header, TextInput, BottomNavigation } from '../components
 const { width } = Dimensions.get('window');
 
 const MealTrackerScreen = ({ navigation }) => {
-  const mealContext = useContext(MealContext);
+  // const { userProfile, meals = [], goals = {} } = useContext(MealContext);
+
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const userName = userProfile?.name || 'Calorie Tracker User';
+
+  // return (
+  //   <SafeAreaView style={styles.container}>
+  //     <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
+  //     <View style={styles.userGreeting}>
+  //       <View style={styles.profileIcon}><Text>👤</Text></View>
+  //       <View>
+  //         <Text style={styles.greeting}>Hello,</Text>
+  //         <Text style={styles.username}>{userName}</Text>
+  //       </View>
+  //     </View>
+  //     {/* Other content */}
+  //   </SafeAreaView>
+  // );
+
+
   // Get meals and goals from context with proper error handling
-  const meals = mealContext?.meals || [];
-  const goals = mealContext?.goals || {
+  const {
+  userProfile = { name: 'Calorie Tracker User' },
+  meals = [],
+  goals = {
     dailyCalories: 2000,
     dailyMealGoal: 3,
     targetWeight: 0,
     selectedGoal: 'maintain'
-  };
+  }
+} = useContext(MealContext);
+
 
   // Calculate today's meals
   const getTodaysMeals = () => {
@@ -43,26 +64,39 @@ const MealTrackerScreen = ({ navigation }) => {
   };
 
   const todaysMeals = getTodaysMeals();
-  const totalMealsLogged = todaysMeals.length;
+  // const totalMealsLogged = todaysMeals.length;
   
-  // Calculate progress based on goals
-  const dailyMealGoal = goals?.dailyMealGoal || 3;
-  const progressPercentage = Math.min(100, Math.round((totalMealsLogged / dailyMealGoal) * 100));
-  
-  // Calculate calorie consumption
-  const calculateTotalCalories = () => {
-    return todaysMeals.reduce((total, meal) => {
-      if (!meal || !meal.foods) return total;
-      return total + meal.foods.reduce((mealTotal, food) => {
-        return mealTotal + (food?.calories || 0);
-      }, 0);
-    }, 0);
-  };
+  // Ensure fallback values for goals
+const dailyMealGoal = Number(goals?.dailyMealGoal) || 3;
+const dailyCalorieGoal = Number(goals?.dailyCalories) || 2000;
 
-  const totalCaloriesConsumed = calculateTotalCalories();
-  const dailyCalorieGoal = goals?.dailyCalories || 2000;
-  const remainingCalories = Math.max(0, dailyCalorieGoal - totalCaloriesConsumed);
-  const caloriePercentage = Math.min(100, Math.round((totalCaloriesConsumed / dailyCalorieGoal) * 100));
+// Calculate total meals logged
+const totalMealsLogged = todaysMeals.length;
+
+// Avoid division by zero
+const progressPercentage = dailyMealGoal > 0
+  ? Math.min(100, Math.round((totalMealsLogged / dailyMealGoal) * 100))
+  : 0;
+
+// Calculate total calories consumed
+const totalCaloriesConsumed = todaysMeals.reduce((total, meal) => {
+  if (!meal?.foods?.length) return total;
+
+  const mealCalories = meal.foods.reduce((sum, food) => {
+    return sum + (Number(food?.calories) || 0);
+  }, 0);
+
+  return total + mealCalories;
+}, 0);
+
+// Remaining calories
+const remainingCalories = Math.max(0, dailyCalorieGoal - totalCaloriesConsumed);
+
+// Calorie progress percentage
+const caloriePercentage = dailyCalorieGoal > 0
+  ? Math.min(100, Math.round((totalCaloriesConsumed / dailyCalorieGoal) * 100))
+  : 0;
+
 
   // Group meals by type
   const mealsByType = todaysMeals.reduce((acc, meal) => {
@@ -184,6 +218,7 @@ const MealTrackerScreen = ({ navigation }) => {
       navigation.navigate(item.routeName);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
