@@ -288,7 +288,7 @@ const caloriePercentage = dailyCalorieGoal > 0
           </View>
         )} */}
 
-        {/* Search and Filter */}
+        {/* Search and Filter
         <View style={styles.searchContainer}>
           <TextInput
 
@@ -300,7 +300,7 @@ const caloriePercentage = dailyCalorieGoal > 0
           <TouchableOpacity style={styles.filterButton}>
             <Text style={styles.filterIcon}>≡</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Most Popular Meals */}
         {popularMeals && popularMeals.length > 0 && (
@@ -438,19 +438,19 @@ const styles = StyleSheet.create({
   emptyStateButton: {
     width: '70%'
   },
-  searchContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 24 
-  },
-  searchInput: { 
-    flex: 1, 
-    marginRight: 12,
-    backgroundColor: colors.grayLight,
-    borderRadius: ui.borderRadius,
-    paddingHorizontal: 16,
-    height: 48
-  },
+  // searchContainer: { 
+  //   flexDirection: 'row', 
+  //   alignItems: 'center', 
+  //   marginBottom: 24 
+  // },
+  // searchInput: { 
+  //   flex: 1, 
+  //   marginRight: 12,
+  //   backgroundColor: colors.grayLight,
+  //   borderRadius: ui.borderRadius,
+  //   paddingHorizontal: 16,
+  //   height: 48
+  // },
   filterButton: { 
     backgroundColor: colors.primary, 
     padding: 12, 
