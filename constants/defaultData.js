@@ -1,6 +1,6 @@
 // constants/defaultData.js
 export const defaultUser = {
-  name: 'New User',
+  name: 'John Doe',
   email: 'user@example.com',
   age: 25,
   gender: 'male',

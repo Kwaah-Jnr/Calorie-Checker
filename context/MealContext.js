@@ -32,22 +32,31 @@ export const MealProvider = ({ children }) => {
     }));
   };
    
-  return (
-    <MealContext.Provider value={{ 
-      ...state,
-      setUserName,
-      setState,
-      deleteMeal: (mealId) => {
-        setState(prev => ({
-          ...prev,
-          meals: prev.meals.filter(meal => meal.id !== mealId)
-        }));
-      },
-    }}>
-      {children}
-    </MealContext.Provider>
-  );
+  // return (
+  //   <MealContext.Provider value={{ 
+  //     ...state,
+  //     setUserName,
+  //     setState,
+  //     addMeal:(newMeal) => {
+  //       setState(prev => ({ ...prev, meals: [newMeal, ...prev.meals] }));
+  //     },
+  //     deleteMeal: (mealId) => {
+  //       setState(prev => ({
+  //         ...prev,
+  //         meals: prev.meals.filter(meal => meal.id !== mealId)
+  //       }));
+  //     },
+  //   }}>
+  //     {children}
+  //   </MealContext.Provider>
+  // );
 
+
+//   useEffect(() => {
+//   AsyncStorage.removeItem('@app_data').then(() => {
+//     console.log('✅ Storage cleared. App will use defaults now.');
+//   });
+// }, []);
   // Load data from storage on startup
   useEffect(() => {
     const loadData = async () => {
@@ -63,6 +72,10 @@ export const MealProvider = ({ children }) => {
             goals: parsedData.goals || defaultGoals,
             // Keep the other defaults if not in storage
           }));
+          //AsyncStorage.removeItem('@app_data');
+
+          AsyncStorage.getItem('@app_data').then(data => console.log(JSON.parse(data)));
+
         }
       } catch (e) {
         console.error('Failed to load data', e);
@@ -116,9 +129,17 @@ export const MealProvider = ({ children }) => {
   };
 
   // Profile functions
-  const updateProfile = (profileData) => {
-    updateState('userProfile', profileData);
-  };
+  // Merge instead of replace
+const updateProfile = (profileData) => {
+  setState(prev => ({
+    ...prev,
+    userProfile: {
+      ...prev.userProfile,
+      ...profileData
+    }
+  }));
+};
+
 
   // Goals functions
   const updateGoals = (goalsData) => {

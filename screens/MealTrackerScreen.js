@@ -21,10 +21,14 @@ import { Button, Card, Header, TextInput, BottomNavigation } from '../components
 const { width } = Dimensions.get('window');
 
 const MealTrackerScreen = ({ navigation }) => {
-  // const { userProfile, meals = [], goals = {} } = useContext(MealContext);
+  const { userProfile, meals = [], goals = {} } = useContext(MealContext);
+    useEffect(() => {
+    console.log('MealTracker - userProfile updated:', userProfile.height);
+  }, [userProfile]);
+  
 
   const [searchQuery, setSearchQuery] = useState('');
-  const userName = userProfile?.name || 'Calorie Tracker User';
+  // const [profile , setProfile] = useState(userProfile);
 
   // return (
   //   <SafeAreaView style={styles.container}>
@@ -42,16 +46,16 @@ const MealTrackerScreen = ({ navigation }) => {
 
 
   // Get meals and goals from context with proper error handling
-  const {
-  userProfile = { name: 'Calorie Tracker User' },
-  meals = [],
-  goals = {
-    dailyCalories: 2000,
-    dailyMealGoal: 3,
-    targetWeight: 0,
-    selectedGoal: 'maintain'
-  }
-} = useContext(MealContext);
+//   const {
+//   userProfile = { name: 'Calorie Tracker User' },
+//   meals = [],
+//   goals = {
+//     dailyCalories: 2000,
+//     dailyMealGoal: 3,
+//     targetWeight: 0,
+//     selectedGoal: 'maintain'
+//   }
+// } = useContext(MealContext);
 
 
   // Calculate today's meals
@@ -237,7 +241,12 @@ const caloriePercentage = dailyCalorieGoal > 0
         <View style={styles.profileIcon}><Text>👤</Text></View>
         <View>
           <Text style={styles.greeting}>Hello,</Text>
-          <Text style={styles.username}>Calorie Tracker User</Text>
+          <Text style={styles.username}><Text style={styles.username}>
+  {userProfile?.name?.trim()?.length > 0 
+    ? userProfile.name 
+    : 'User'}
+</Text>
+</Text>
         </View>
       </View>
       <ScrollView 
@@ -451,20 +460,20 @@ const styles = StyleSheet.create({
   //   paddingHorizontal: 16,
   //   height: 48
   // },
-  filterButton: { 
-    backgroundColor: colors.primary, 
-    padding: 12, 
-    borderRadius: ui.borderRadius,
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  filterIcon: { 
-    color: colors.white, 
-    fontSize: 16, 
-    fontWeight: 'bold' 
-  },
+  // filterButton: { 
+  //   backgroundColor: colors.primary, 
+  //   padding: 12, 
+  //   borderRadius: ui.borderRadius,
+  //   width: 48,
+  //   height: 48,
+  //   justifyContent: 'center',
+  //   alignItems: 'center'
+  // },
+  // filterIcon: { 
+  //   color: colors.white, 
+  //   fontSize: 16, 
+  //   fontWeight: 'bold' 
+  // },
   section: { 
     marginBottom: 32 
   },

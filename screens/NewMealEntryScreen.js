@@ -275,6 +275,8 @@ const NewMealEntryScreen = ({ navigation, route }) => {
                   style={styles.removeButton}
                   onPress={() => handleRemoveEntry(index)}
                 >
+                {/* <Text style={styles.addItemButtonText}>Remove food</Text> */}
+
                   <Icon name="close" size={20} color={colors.white} />
                 </TouchableOpacity>
               )}
@@ -324,6 +326,7 @@ const NewMealEntryScreen = ({ navigation, route }) => {
           </View>
         ))}
 
+        
         {/* Add Food Button */}
         <TouchableOpacity 
           style={styles.addItemButton} 

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState,useEffect,useContext } from 'react';
 import {
   View,
   Text,
@@ -18,13 +18,19 @@ const UserProfileScreen = ({ navigation }) => {
   const { userProfile, updateProfile, goals } = useContext(MealContext);
   
   const [profile, setProfile] = useState(userProfile || {
-    name: 'New User',
-    email: '',
-    age: 25,
+    name: 'John Doe',
+    email: 'jd@dummy.com',
+    age:0,
     gender: 'male',
     height: 175,
     weight: 70,
   });
+
+  useEffect(() => {
+    if (userProfile && Object.keys(userProfile).length > 0) {
+      setProfile(userProfile);
+    }
+  }, [userProfile]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
@@ -125,7 +131,7 @@ const UserProfileScreen = ({ navigation }) => {
         <View style={styles.profileHeader}>
           <View style={styles.profileHeaderContent}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
+              <Text style={styles.avatarText}> {profile.name && profile.name.length > 0 ? profile.name.charAt(0).toUpperCase() : 'U'}</Text>
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{profile.name}</Text>
@@ -201,7 +207,7 @@ const UserProfileScreen = ({ navigation }) => {
                       !isEditing && styles.disabledInput
                     ]}
                     value={profile.name}
-                    onChangeText={(value) => updateProfile('name', value)}
+                    onChangeText={(value) => updateProfileField('name', value)}
                     editable={isEditing}
                   />
                 </View>
@@ -216,7 +222,7 @@ const UserProfileScreen = ({ navigation }) => {
                       !isEditing && styles.disabledInput
                     ]}
                     value={profile.email}
-                    onChangeText={(value) => updateProfile('email', value)}
+                    onChangeText={(value) =>updateProfileField('email', value)}
                     editable={isEditing}
                     keyboardType="email-address"
                   />
@@ -231,8 +237,8 @@ const UserProfileScreen = ({ navigation }) => {
                       styles.input,
                       !isEditing && styles.disabledInput
                     ]}
-                    value={profile.age.toString()}
-                    onChangeText={(value) => updateProfile('age', parseInt(value) || 0)}
+                    value={profile.age ? profile.age.toString() : '0'}
+                    onChangeText={(value) => updateProfileField('age', parseInt(value) || 0)}
                     editable={isEditing}
                     keyboardType="numeric"
                   />
@@ -246,7 +252,7 @@ const UserProfileScreen = ({ navigation }) => {
                         styles.genderButton,
                         profile.gender === 'male' && styles.activeGenderButton
                       ]}
-                      onPress={() => updateProfile('gender', 'male')}
+                      onPress={() => updateProfileField('gender', 'male')}
                       disabled={!isEditing}
                     >
                       <Text style={[
@@ -261,7 +267,7 @@ const UserProfileScreen = ({ navigation }) => {
                         styles.genderButton,
                         profile.gender === 'female' && styles.activeGenderButton
                       ]}
-                      onPress={() => updateProfile('gender', 'female')}
+                      onPress={() => updateProfileField('gender', 'female')}
                       disabled={!isEditing}
                     >
                       <Text style={[
@@ -283,8 +289,8 @@ const UserProfileScreen = ({ navigation }) => {
                       styles.input,
                       !isEditing && styles.disabledInput
                     ]}
-                    value={profile.height.toString()}
-                    onChangeText={(value) => updateProfile('height', parseInt(value) || 0)}
+                    value={profile.height ? profile.height.toString() : '0'}
+                    onChangeText={(value) => updateProfileField('height', parseInt(value) || 0)}
                     editable={isEditing}
                     keyboardType="numeric"
                   />
@@ -297,8 +303,8 @@ const UserProfileScreen = ({ navigation }) => {
                       styles.input,
                       !isEditing && styles.disabledInput
                     ]}
-                    value={profile.weight.toString()}
-                    onChangeText={(value) => updateProfile('weight', parseInt(value) || 0)}
+                    value={profile.weight ? profile.weight.toString() : '0'}
+                    onChangeText={(value) => updateProfileField('weight', parseInt(value) || 0)}
                     editable={isEditing}
                     keyboardType="numeric"
                   />

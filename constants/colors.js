@@ -7,5 +7,7 @@ export const colors = {
   primaryDark: '#d97706',
   white: '#ffffff',
   gray: '#f3f4f6',
-  grayDark: '#e5e7eb'
+  grayDark: '#e5e7eb',
+  error: '#dc2626',
+  success: '#16a34a',
 };
