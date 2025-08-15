@@ -16,6 +16,16 @@ import { MealContext } from '../context/MealContext';
 
 const UserProfileScreen = ({ navigation }) => {
   const { userProfile, updateProfile, goals } = useContext(MealContext);
+
+  const  [goal,setGoal] = useState(goals || {
+    dailyCalories: 2000,
+    dailyMealGoal: 3,
+    targetWeight: 70, 
+    selectedGoal: 'maintain',
+    activityLevel: 1.55, // Moderately active 
+    bmr: 1650, // Will be calculated based on user stats
+    tdee: 2558  // Will be calculated based on activity level   
+    });
   
   const [profile, setProfile] = useState(userProfile || {
     name: 'John Doe',
@@ -54,10 +64,11 @@ const UserProfileScreen = ({ navigation }) => {
   
     const handleSave = () => {
     updateProfile(profile);
+    
     setIsEditing(false);
     Alert.alert('Success', 'Profile saved successfully!');
     navigation.navigate({
-      name: 'MealTracker',
+      name: 'Dashboard',
       params: { updatedName: profile.name },
       merge: true,
     });
@@ -93,7 +104,10 @@ const UserProfileScreen = ({ navigation }) => {
         bmr,
         tdee
       },
-      updateGoals: navigation.getParam('updateGoals') // Pass through if needed
+      updateGoals: navigation.navigate('Goals', {
+              screen: 'MealTracker',
+            params: { updatedName: profile.name },})
+ // Pass through if needed
     });
   };
   
@@ -148,6 +162,7 @@ const UserProfileScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
+         
 
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
@@ -189,6 +204,7 @@ const UserProfileScreen = ({ navigation }) => {
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
           <TabButton id="personal" label="Personal Info" />
+         
 
         </View>
 
@@ -313,6 +329,114 @@ const UserProfileScreen = ({ navigation }) => {
             </View>
           )}
           
+          {isEditing && (
+        <View style={styles.footer}>
+          <TouchableOpacity 
+            style={[styles.footerButton, styles.cancelButton]}
+            onPress={() => setIsEditing(false)}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.footerButton, styles.saveButton]}
+            onPress={handleSave}
+          >
+            <Text style={styles.saveButtonText}>💾 Save Changes</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+{/*      
+{activeTab === 'goals' && (
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>Goals</Text>
+
+    
+    <Text style={styles.subsectionTitle}>Daily Calorie Goal</Text>
+    <View style={styles.inputRow}>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Calories</Text>
+        <TextInput
+          style={[styles.input, !isEditing && styles.disabledInput]}
+          value={goals.dailyCalories ? goals.dailyCalories.toString() : '0'}
+          onChangeText={(value) =>
+            updateProfileField('dailyCalories', parseInt(value) || 0)
+          }
+          editable={isEditing}
+          keyboardType="numeric"
+        />
+      </View>
+    </View>
+
+    
+    <Text style={styles.subsectionTitle}>Daily Meal Goal</Text>
+    <View style={styles.inputRow}>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Meals</Text>
+        <TextInput
+          style={[styles.input, !isEditing && styles.disabledInput]}
+          value={goals.dailyMealGoal ? goals.dailyMealGoal.toString() : '0'}
+          onChangeText={(value) =>
+            updateProfileField('dailyMealGoal', parseInt(value) || 0)
+          }
+          editable={isEditing}
+          keyboardType="numeric"
+        />
+      </View>
+    </View>
+
+    
+    <Text style={styles.subsectionTitle}>Target Weight</Text>
+    <View style={styles.inputRow}>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Weight (kg)</Text>
+        <TextInput
+          style={[styles.input, !isEditing && styles.disabledInput]}
+          value={goals.targetWeight ? goals.targetWeight.toString() : '0'}
+          onChangeText={(value) =>
+            updateProfileField('targetWeight', parseInt(value) || 0)
+          }
+          editable={isEditing}
+          keyboardType="numeric"
+        />
+      </View>
+
+      
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Activity Level</Text>
+        <View style={styles.checkboxGrid}>
+          {['sedentary', 'lightly active', 'moderately active', 'very active', 'super active'].map(
+            (level, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.checkboxOption,
+                  goals.activityLevel === index + 1 && styles.checkboxOptionSelected,
+                  !isEditing && styles.checkboxOptionDisabled
+                ]}
+                onPress={() => isEditing && updateProfileField('activityLevel', index + 1)}
+                disabled={!isEditing}
+              >
+                <Text
+                  style={[
+                    styles.checkboxOptionText,
+                    goals.activityLevel === index + 1 && styles.checkboxOptionTextSelected
+                  ]}
+                >
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
+      </View>
+    </View>
+  </View>
+)}*/}
+    
+
+
+
         </View>
 
         {/* Quick Actions */}
@@ -338,22 +462,7 @@ const UserProfileScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Save Button */}
-      {isEditing && (
-        <View style={styles.footer}>
-          <TouchableOpacity 
-            style={[styles.footerButton, styles.cancelButton]}
-            onPress={() => setIsEditing(false)}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.footerButton, styles.saveButton]}
-            onPress={handleSave}
-          >
-            <Text style={styles.saveButtonText}>💾 Save Changes</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+  
     </SafeAreaView>
   );
 };
@@ -365,7 +474,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: ui.padding,
-    paddingBottom: 100,
+    paddingBottom: 200,
   },
   profileHeader: {
     backgroundColor: colors.primary,
@@ -494,9 +603,12 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     elevation: 2,
+    // height: 'auto',
+    minHeight: 200,
   },
   section: {
     marginBottom: 20,
+    height: 'auto',
   },
   sectionTitle: {
     fontSize: 18,
@@ -678,6 +790,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     flexDirection: 'row',
+    zIndex: 10,
     justifyContent: 'space-between',
   },
   footerButton: {
@@ -696,6 +809,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: colors.primary,
+    color: colors.success,
     marginLeft: 8,
   },
   cancelButtonText: {

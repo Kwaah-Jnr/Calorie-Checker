@@ -93,11 +93,14 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     newEntries[index][field] = value;
     
     // Auto-calculate calories if quantity changes for certain foods
-    if (field === 'quantity' && value && newEntries[index].name) {
+    if (field === 'quantity' && value && newEntries[index].name && newEntries[index].unit) {
       const food = newEntries[index];
-      const calorieInfo = getCalorieInfo(food.name);
+      const calorieInfo = getCalorieInfo(food.name, food.unit);
       if (calorieInfo) {
-        newEntries[index].calories = Math.round(parseFloat(value) * calorieInfo.caloriesPerUnit).toString();
+        const qty = parseFloat(value);
+        if (!isNaN(qty)) {
+        newEntries[index].calories = Math.round(qty * calorieInfo.caloriesPerUnit).toString();
+        }
       }
     }
     
@@ -108,6 +111,8 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     setFoodEntries([...foodEntries, { name: '', quantity: '', unit: 'grams', calories: '' }]);
   };
 
+
+
   const handleRemoveEntry = (index) => {
     if (foodEntries.length > 1) {
       const newEntries = foodEntries.filter((_, i) => i !== index);
@@ -115,18 +120,54 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     }
   };
   
-
+  // So you don’t run into issues like "Banku" vs "banku" or "Grams" vs "grams".
+  const normalizeKey = (str) => str.trim().toLowerCase();
   // Get calorie info for common foods
-  const getCalorieInfo = (foodName) => {
-    const foodMap = {
-      'Coffee': { caloriesPerUnit: 2, unit: 'cup' },
-      'Apple': { caloriesPerUnit: 95, unit: 'medium' },
-      'Chicken Breast': { caloriesPerUnit: 165, unit: '100g' },
-      'White Rice': { caloriesPerUnit: 130, unit: '100g' },
-      'Avocado Toast': { caloriesPerUnit: 220, unit: 'slice' }
-    };
-    return foodMap[foodName];
+
+  
+  // Full Ghanaian food calorie lookup
+  const calorieLookup = {
+    jollof_rice: { grams: 1.3, servings: 250, cups: 215 },
+    plain_rice: { grams: 1.3, servings: 240, cups: 210 },
+    fried_rice: { grams: 1.5, servings: 300, cups: 260 },
+    waakye: { grams: 1.4, servings: 300, cups: 280 },
+    banku: { grams: 1.1, servings: 200, pcs: 180 },
+    kenkey: { grams: 1.0, servings: 190, pcs: 200 },
+    gari: { grams: 3.6, tbsp: 50, cups: 360 },
+    akple: { grams: 1.1, servings: 190, pcs: 180 },
+    fufu: { grams: 1.2, servings: 220, pcs: 210 },
+    ampesi_yam: { grams: 1.1, servings: 210, pcs: 190 },
+    boiled_plantain: { grams: 1.1, servings: 190, pcs: 150 },
+    fried_plantain: { grams: 3.0, servings: 350, pcs: 180 },
+    tilapia: { grams: 1.2, servings: 250, pcs: 220 },
+    goat_meat: { grams: 2.5, servings: 270, pcs: 250 },
+    chicken: { grams: 2.0, servings: 240, pcs: 220 },
+    beef: { grams: 2.5, servings: 260, pcs: 240 },
+    fried_fish: { grams: 2.4, servings: 280, pcs: 250 },
+    boiled_egg: { pcs: 78 },
+    fried_egg: { pcs: 90 },
+    beans_stew: { grams: 1.3, servings: 200, cups: 190 },
+    kose: { pcs: 120 },
+    groundnut: { grams: 5.6, tbsp: 90 },
+    groundnut_soup: { grams: 2.5, servings: 300, cups: 280 },
+    light_soup: { grams: 0.6, servings: 120, cups: 110 },
+    palmnut_soup: { grams: 1.5, servings: 240, cups: 220 },
+    kontomire_stew: { grams: 1.2, servings: 180, cups: 160 },
+    okro_stew: { grams: 0.8, servings: 140, cups: 130 },
+    shito: { tsp: 15, tbsp: 45 },
+    coffee: { tsp: 2, tbsp: 6, cups: 5 },
+    sobolo: { cups: 130, bottles: 150 },
+    milo: { tbsp: 40, cups: 200 }
   };
+  const getCalorieInfo = (foodName, unit) => {
+    
+  const foodKey = foodName.toLowerCase().replace(/\s+/g, '');
+  return calorieLookup[foodKey] ? { 
+    caloriesPerUnit: calorieLookup[foodKey][unit] || null, 
+    unit 
+  } : null;
+  };
+  
 
   // Calculate total calories for the meal
   const calculateTotalCalories = () => {
@@ -136,6 +177,22 @@ const NewMealEntryScreen = ({ navigation, route }) => {
   };
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  // Handle search functionality
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const results = Object.keys(calorieLookup).filter(food => food.toLowerCase().includes(query.toLowerCase())
+  );
+
+  setSearchResults(results);
+  };
+
   // Main log handler
   const handleLogMeal = () => {
     
@@ -248,10 +305,10 @@ const NewMealEntryScreen = ({ navigation, route }) => {
         {/* Search and Filter */}
         <View style={styles.searchContainer}>
           <TextInput
-
+            
             placeholder="Search meals..."
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={handleSearch}
             style={styles.searchInput}
           />
           <TouchableOpacity style={styles.filterButton}>
@@ -259,12 +316,34 @@ const NewMealEntryScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <View style={styles.resultsContainer}>
+            {searchResults.map((foodName, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.resultItem}
+                onPress={() =>{
+                  // Example: add it to first entry in foodEntries
+                  const newEntries = [...foodEntries];
+                  newEntries[0].name = foodName;
+                  setFoodEntries(newEntries);
+                  setSearchQuery(foodName);
+                  setSearchResults([]);
+                }}
+                >
+                  <Text>{foodName}</Text>
+                </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* Food Entries List */}
         {foodEntries.map((item, index) => (
           <View key={index} style={styles.foodEntryContainer}>
             <View style={styles.foodEntryHeader}>
               <TextInput
-                placeholder="Food name ( if not in search meals)"
+                placeholder="Enter food name"
                 value={item.name}
                 onChangeText={(text) => handleUpdateEntry(index, 'name', text)}
                 style={styles.foodNameInput}
@@ -493,6 +572,18 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontWeight: 'bold' 
   },
+  resultsContainer: {
+    backgroundColor: '#fff',
+  borderWidth: 1,
+  borderColor: '#ccc',
+  marginTop: 5,
+  borderRadius: 5,
+},
+resultItem: {
+  padding: 10,
+  borderBottomWidth: 1,
+  borderBottomColor: '#eee',
+},
   foodEntryContainer: {
     marginBottom: 20,
     backgroundColor: colors.grayLight,

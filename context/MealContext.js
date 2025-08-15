@@ -74,7 +74,7 @@ export const MealProvider = ({ children }) => {
           }));
           //AsyncStorage.removeItem('@app_data');
 
-          AsyncStorage.getItem('@app_data').then(data => console.log(JSON.parse(data)));
+          
 
         }
       } catch (e) {
