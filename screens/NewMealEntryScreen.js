@@ -89,23 +89,42 @@ const NewMealEntryScreen = ({ navigation, route }) => {
 
   // Food entry handlers
   const handleUpdateEntry = (index, field, value) => {
-    const newEntries = [...foodEntries];
-    newEntries[index][field] = value;
-    
-    // Auto-calculate calories if quantity changes for certain foods
-    if (field === 'quantity' && value && newEntries[index].name && newEntries[index].unit) {
-      const food = newEntries[index];
-      const calorieInfo = getCalorieInfo(food.name, food.unit);
-      if (calorieInfo) {
-        const qty = parseFloat(value);
-        if (!isNaN(qty)) {
-        newEntries[index].calories = Math.round(qty * calorieInfo.caloriesPerUnit).toString();
-        }
-      }
+  const newEntries = [...foodEntries];
+  newEntries[index][field] = value;
+
+  const { name, quantity, unit } = newEntries[index];
+
+  // Reset calories if any required value is missing
+  if (!name || !quantity || !unit) {
+    if (field !== 'calories') {
+      newEntries[index].calories = '';
     }
-    
     setFoodEntries(newEntries);
-  };
+    return;
+  }
+
+  // If calories are manually set, skip auto-calc
+  if (field === 'calories') {
+    setFoodEntries(newEntries);
+    return;
+  }
+
+  // Try to get calorie info
+  const food = getCalorieInfo(name, unit);
+  if (food) {
+    const qty = parseFloat(quantity);
+    if (!isNaN(qty)) {
+      newEntries[index].calories = Math.round(qty * food.caloriesPerUnit).toString();
+    } else {
+      newEntries[index].calories = '';
+    }
+  } else {
+    newEntries[index].calories = '';
+  }
+
+  setFoodEntries(newEntries);
+};
+
 
   const handleAddEntry = () => {
     setFoodEntries([...foodEntries, { name: '', quantity: '', unit: 'grams', calories: '' }]);
@@ -120,8 +139,8 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     }
   };
   
-  // So you don’t run into issues like "Banku" vs "banku" or "Grams" vs "grams".
-  const normalizeKey = (str) => str.trim().toLowerCase();
+  
+  // const normalizeKey = (str) => str.trim().toLowerCase();
   // Get calorie info for common foods
 
   
@@ -159,14 +178,19 @@ const NewMealEntryScreen = ({ navigation, route }) => {
     sobolo: { cups: 130, bottles: 150 },
     milo: { tbsp: 40, cups: 200 }
   };
+
+  // Function to get calorie info based on food name and unit
+  // This function will return the calories per unit for the given food name and unit
   const getCalorieInfo = (foodName, unit) => {
-    
-  const foodKey = foodName.toLowerCase().replace(/\s+/g, '');
-  return calorieLookup[foodKey] ? { 
-    caloriesPerUnit: calorieLookup[foodKey][unit] || null, 
+  const foodKey = foodName.toLowerCase().replace(/\s+/g, '_'); // match your keys
+  if (!calorieLookup[foodKey] || !calorieLookup[foodKey][unit]) {
+    return null; // no match
+  }
+  return { 
+    caloriesPerUnit: calorieLookup[foodKey][unit], 
     unit 
-  } : null;
   };
+};
   
 
   // Calculate total calories for the meal
