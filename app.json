@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "calorieCalculator",
-    "slug": "calorieCalculator",
+    "name": "BELLY-MATH",
+    "slug": "BELLY-MATH",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
